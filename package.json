@@ -18,7 +18,7 @@
     "json-ld"
   ],
   "author": "Blake Regalia <blake.regalia@gmail.com> (http://blake-regalia.com)",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/blake-regalia/node-spaz/issues"
   },
