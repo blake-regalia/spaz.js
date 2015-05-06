@@ -1,0 +1,45 @@
+
+var lemon = Spaz(':Lemon');
+
+lemon.color;	// "Yellow"
+lemon['color'];	// "Yellow"
+lemon('color');	// ["Yellow"];
+
+lemon.taste;		// "Sweet"
+lemon('taste');		// ["Sweet", "Sour"]
+lemon('taste', 0);	// "Sweet"
+lemon('taste', 1);	// "Sour"
+
+lemon.species;		// ":Citrus"
+lemon('species');	// [":Citrus"]
+lemon('species', 0, function(citrus) {
+	citrus({
+		select: '?fruit',
+		where: '?fruit :species @this'
+	}, function(items) {
+		items.forEach(function(fruit) {
+			console.log(
+				fruit('taste').join(' & ') + ' ' + fruit.color + ' ' + fruit.name
+			);
+		});
+	});
+});
+
+var lemon = Spaz(':Lemon');
+lemon('species').pick('?fruit').where('?fruit :species @this')
+	.eat(function(fruit) {
+		console.log(
+			fruit('taste').join(' & ') + ' ' + fruit.color + ' ' + fruit.name
+		);
+	});
+
+
+describe :Lemon;
+select ?fruit where {
+	:Lemon :species ?lemonSpecies;
+	?fruit :species ?lemonSpecies;
+}
+describe :Lemon;
+describe :Orange;
+describe :Lime;
+describe :Tangerine;

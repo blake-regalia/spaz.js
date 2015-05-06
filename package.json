@@ -1,0 +1,29 @@
+{
+  "name": "spaz",
+  "version": "0.0.1",
+  "description": "Query linked-data nodes by abstracting away traditional SPARQL and JSON-LD interaction",
+  "main": "./lib",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/blake-regalia/node-spaz.git"
+  },
+  "keywords": [
+    "spaz",
+    "sparql",
+    "sparql-js",
+    "linked-data",
+    "json-ld"
+  ],
+  "author": "Blake Regalia <blake.regalia@gmail.com> (http://blake-regalia.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/blake-regalia/node-spaz/issues"
+  },
+  "homepage": "https://github.com/blake-regalia/node-spaz",
+  "devDependencies": {
+    "grunt": "^0.4.5"
+  }
+}
