@@ -43,3 +43,11 @@ describe :Lemon;
 describe :Orange;
 describe :Lime;
 describe :Tangerine;
+
+
+
+$$.select('?title')
+	.where({
+		'?paper': {
+			':id': '?ids',
+		}
