@@ -23,8 +23,9 @@ $ npm install spaz
 * [`.from`](#q.from)
 * [`.select`](#q.select)
 
-
+---------------------------------------
 <a name="q.from" />
+## FROM
 
 ### .from()
 Returns list of default graphs and named graphs as array. Identical to calling `.from(false)`
@@ -43,8 +44,8 @@ Adds URIs to the set of default graphs
 Will add all items from `graph_uris.default` and `graph_uris.named` to the respective existing graph sets. If defined, expects either a string or an array of strings for each property (`.default` and `.named`). **However if an empty array is given for the `.default` or `.named` property, only that corresponding set will be cleared.**
 
 ---------------------------------------
-
 <a name="q.select" />
+## SELECT
 
 ### .select()
 Returns a list of variables in the current select query. Identical to calling `.select(false)`
