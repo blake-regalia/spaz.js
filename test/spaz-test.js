@@ -5,10 +5,10 @@ const should = require('should');
 
 let $$ = new spaz();
 
-let q = $$.build('select');
-
 
 describe('.from()', () => {
+
+	let q = $$.build('select');
 
 	it('supports choosing multiple default graphs', () => {
 		q.from('a','b','c')
@@ -87,6 +87,8 @@ describe('.from()', () => {
 
 describe('.select()', () => {
 
+	let q = $$.build('select');
+
 	it('supports selecting multiple variables of mix/match prefixes', () => {
 		q.select('a','?b','$c')
 			.select().should.deepEqual(['?a', '?b', '?c']);
@@ -133,6 +135,8 @@ describe('.select()', () => {
 
 describe('.group/having/order()', () => {
 
+	let q = $$.build('select');
+
 	it('allows multiple arguments', () => {
 		q.group('a','b','c')
 			.group().should.deepEqual(['a', 'b', 'c']);
@@ -157,14 +161,54 @@ describe('.group/having/order()', () => {
 });
 
 
-q = $$.build('ask');
-
 describe('ask query', () => {
+
+	let q = $$.build('ask');
 
 	it('generates correct SPARQL string', () => {
 
 		q.where(
 			$$(':Thing a :Type')
 		).toSparql().should.equal('ask where { :Thing a :Type }')
+	});
+});
+
+describe('subselect', () => {
+
+	let q = $$.build('select');
+
+	it('works', () => {
+		q.select('?y','?name')
+			.where(
+				['?x', 'foaf:knows', '?y'],
+				$$.select('?y', 'sample(?name)')
+					.where(
+						['?x', 'foaf:name', '?name']
+					)
+					.order('?x')
+					.group('?name')
+			).toSparql().should.equal(
+				'select ?y ?name '
+				+'where { ?x foaf:knows ?y . '
+					+'{ select ?y sample(?name) '
+						+'where { ?x foaf:name ?name . } '
+						+'order by ?x '
+						+'group by ?name '
+					+'} '
+				+'}'
+			);
+
+		// SELECT ?y ?name
+		// WHERE {
+		//   ?x foaf:knows ?y .
+		//   {
+		//     SELECT ?y SAMPLE(?name)
+		//     WHERE {
+		//       ?x foaf:name ?name . 
+		//     }
+		//     ORDER BY ?x
+		//     GROUP BY ?name
+		//   }
+		// }
 	});
 });

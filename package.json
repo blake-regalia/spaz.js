@@ -4,7 +4,7 @@
   "description": "Query linked-data nodes by abstracting away traditional SPARQL and JSON-LD interaction",
   "main": "./lib",
   "scripts": {
-    "test": "mocha --compilers js:babel/register"
+    "test": "mocha --harmony_proxies --compilers js:babel/register"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/blake-regalia/node-spaz",
   "devDependencies": {
+    "arginfo": "^1.0.0",
     "babel": "^5.8.23",
     "grunt": "^0.4.5",
     "mocha": "^2.3.3",
@@ -31,6 +32,8 @@
   },
   "dependencies": {
     "cli-color": "^1.1.0",
-    "extend": "^3.0.0"
+    "extend": "^3.0.0",
+    "harmony-proxy": "^0.1.0",
+    "merge": "^1.2.0"
   }
 }

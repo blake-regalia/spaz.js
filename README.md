@@ -25,7 +25,6 @@ $ npm install spaz
 
 ---------------------------------------
 <a name="q.from" />
-## FROM
 
 ### .from()
 Returns list of default graphs and named graphs as array. Identical to calling `.from(false)`
@@ -45,7 +44,6 @@ Will add all items from `graph_uris.default` and `graph_uris.named` to the respe
 
 ---------------------------------------
 <a name="q.select" />
-## SELECT
 
 ### .select()
 Returns a list of variables in the current select query. Identical to calling `.select(false)`
@@ -63,7 +61,7 @@ Adds `alias` to the set of variables along with a corresponding `expression` use
 ### .select(expression_w_alias: string)
 Parses `expression_w_alias` for the expression and aliased variable name, which it then adds (respectively) to the set of variables and corresponding expressions used by the select statement.
 
-### .select(expressions: array of strings)
+### .select(expressions: array[string])
 Creates a new list of select variables from the given `variables` array. Passing an empty array will effectively clear the current selection.
 
 
