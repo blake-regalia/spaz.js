@@ -22,6 +22,7 @@ $ npm install spaz
 
 * [`.from`](#q.from)
 * [`.select`](#q.select)
+* [`.where`](#q.where)
 
 ---------------------------------------
 <a name="q.from" />
@@ -48,8 +49,8 @@ Will add all items from `graph_uris.default` and `graph_uris.named` to the respe
 ### .select()
 Returns a list of variables in the current select query. Identical to calling `.select(false)`
 
-### .select(as_hash: boolean)
-Returns a hash of variables and their corresponding expressions if `as_hash` is true; otherwise returns list of variables as array
+### .select(with_expressions: boolean)
+Returns a list of variables and their corresponding expressions if `with_expressions` is true; otherwise returns list of variables as array
 
 ### .select(variable: string)
 Adds `variable` to the set of variables used by the select statement
@@ -64,4 +65,101 @@ Parses `expression_w_alias` for the expression and aliased variable name, which 
 ### .select(expressions: array[string])
 Creates a new list of select variables from the given `variables` array. Passing an empty array will effectively clear the current selection.
 
+---------------------------------------
+<a name="q.select" />
 
+### .where()
+Returns [SPARQL.js JSON representation](https://github.com/RubenVerborgh/SPARQL.js#representation) of group graph patterns as an array of objects.
+
+### .where(...patterns: mixed)
+Adds graph patterns to the existing list. See [Building Patterns](#building-patterns).
+
+### .where.clear()
+Clears all graph patterns from the `WHERE` block.
+
+
+---------------------------------------
+
+## Building Patterns
+
+*
+
+### Introduction
+
+Single pattern statements can be made using strings:
+```javascript
+q.where(
+	'?person a foaf:Person',
+	'?person foaf:name ?name',
+	'?person foaf:knows ?friend',
+	'?friend foaf:name "Steve Brule"^^xsd:string'
+);
+
+You can also separate the subject, predicate and object by using an array:
+```javascript
+q.where(
+	['?person','a','foaf:Person'],
+	['?person','foaf:name','?name'],
+	['?person','foaf:knows','?friend'],
+	['?friend','foaf:name','"Steve Brule"^^xsd:string']
+);
+```
+
+Even better yet, arrays let you make nestable statements:
+```javascript
+q.where(
+	['?person', {
+		a: 'foaf:Person',
+		'foaf:name': '?name',
+		'foaf:knows': {    // this will create a blanknode
+			'foaf:name': '"Steve Brule"^^xsd:string'
+		},
+	}]
+);
+```
+
+Following the previous example, if you wanted to create a variable instead of a blanknode:
+```javascript
+q.where(
+	['?person', {
+		a: 'foaf:Person',
+		'foaf:name': '?name',
+		'foaf:knows': '?friend',
+	}],
+	['?friend', 'foaf:name', $$.val('Steve Brule')]
+);
+```
+Here, `$$.val` is invoked to generate `'"Steve Brule"^^xsd:string`. See [$$.val](#$$.val) for more deatil.
+
+Arrays allow nesting from the predicate (as shown above) as well as from the subject:
+```javascript
+q.where(
+	['?person', 'foaf:knows', {
+		'foaf:name': $$.val('Steve Brule')
+	}]
+);
+```
+
+The examples above only demonstrate appending triples (or in some cases, new basic graph patterns) to an existing group pattern (or empty group). For other types of patterns, groups and expressions, use these `$$.` methods:
+ * [$$.graph]
+ * [$$.union]
+ * [$$.optional]
+ * [$$.minus]
+ * [$$.filter]
+ * [$$.values]
+ * [$$.service]
+ * [$$.bind]
+ * [$$.select]
+
+---------------------------------------
+<a name="$$.val" />
+
+### $$.val(value: boolean/number/string[, type: string])
+Produces a SPARQL-ready string representation of a literal value:
+```javascript
+$$.val(2); // '"2"^^xsd:integer'
+$$.val(2.5); // '"2.5"^^xsd:decimal'
+$$.val(true); // '"true"^^xsd:boolean'
+$$.val('test'); // '"test"^^xsd:string'
+$$.val('other','my:type'); // '"other"^^my:type'
+```
