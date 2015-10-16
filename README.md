@@ -94,6 +94,7 @@ q.where(
 	'?person foaf:knows ?friend',
 	'?friend foaf:name "Steve Brule"^^xsd:string'
 );
+```
 
 You can also separate the subject, predicate and object by using an array:
 ```javascript
@@ -131,10 +132,10 @@ q.where(
 ```
 Here, `$$.val` is invoked to generate `'"Steve Brule"^^xsd:string`. See [$$.val](#$$.val) for more deatil.
 
-Arrays allow nesting from the predicate (as shown above) as well as from the subject:
+Arrays allow nesting from the predicate (as shown above) as well as from the subject (which triggers the creation of a blanknode):
 ```javascript
 q.where(
-	['?person', 'foaf:knows', {
+	['?person', 'foaf:knows', {    // this will create a blanknode
 		'foaf:name': $$.val('Steve Brule')
 	}]
 );
