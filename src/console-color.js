@@ -38,5 +38,6 @@ console.fail = function() {
     	})
 	);
 	console.error((new Error()).stack.split(/\n/g).slice(4).join('\n'));
-	process.exit(1);
+	if(process && process.exit) process.exit(1);
+	throw 'Exitting on fatal error';
 };

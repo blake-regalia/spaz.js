@@ -59,7 +59,7 @@ const S_VAR = '(?:[\\?\\$]?)('+S_VARNAME+')';
 // productions
 const R_VAR = new RegExp('^'+S_VAR+'$');
 const R_EXPRESSION = new RegExp('^(.*)\\s+[Aa][Ss]\\s+'+S_VAR+'$');
-const R_PREFIX = new RegExp('^('+S_PN_PREFIX+'):$');
+const R_PREFIX = new RegExp('^('+S_PN_PREFIX+')?:$');
 const R_PREFIXED_NAME = new RegExp('^'+S_PNAME_LN+'$');
 const R_IRIREF = /^<([^\s>]+)>$/;
 
@@ -231,7 +231,7 @@ const __construct = function(h_query) {
 			}
 
 			//
-			add_prefix_item(m_name[1], m_iriref[1]);
+			add_prefix_item(m_name[1] || '', m_iriref[1]);
 		}
 		// hash
 		else if('object' === typeof z_prefix) {
@@ -697,6 +697,16 @@ const __construct = function(h_query) {
 
 			// set query type
 			this.query_type = s_type;
+
+			// add `.clear` method to `where`
+			this.where.clear = () => {
+
+				// allow user to clear all graph patterns
+				a_where_ggps.length = 0;
+
+				// enable chaining
+				return this;
+			};
 		}
 
 		// don't use BASE, ever.
@@ -801,12 +811,6 @@ const __construct = function(h_query) {
 		dump() {
 			debug.info(this.toSparql());
 		}
-	};
-
-
-	// extend .where method by allowing user to clear all patterns
-	basic_query.prototype.where.clear = () => {
-		a_where_ggps.length = 0;
 	};
 
 

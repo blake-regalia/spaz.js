@@ -253,6 +253,60 @@ const __construct = function(h_config) {
 			//
 			return '"'+z_value+'"^^'+s_type;
 		},
+
+		// 
+		filter(...a_exprs) {
+
+			//
+			let h_expression = '';
+
+			//
+			a_exprs.map((z_expr) => {
+
+				// SPARQL string
+				if('string' === typeof z_expr) {
+
+					// simple concatenation
+					s_expression += z_expr;
+				}
+				// array indicates special meaning
+				else if(Array.isArray(z_expr)) {
+
+					// ref last arg
+					let z_val = z_expr[z_expr.length-1];
+
+					// 
+					if('object' === typeof z_val) {
+
+						// regex
+						if(z_val instanceof RegExp) {
+
+							// must be two args
+							if(2 !== z_expr.length) {
+								debug.fail('filter with regular expression must have exactly 2 arguments. instead got '+z_expr.length+': '+arginfo(z_expr));
+							}
+
+							// ref test arg
+							let s_test = z_expr[0];
+
+							// `test` arg needs to be a string
+							if('string' !== typeof s_test) {
+								debug.fail('filter with regular expression expects [string] for `test` argument. instead got: '+arginfo(s_test));
+							}
+
+							return `regex(${s_test},"${z_val.source}","${z_val.flags}")`;
+
+							//
+							// return {
+							// 	type: 'operation',
+							// 	operator: 'regex',
+							// 	args: [s_test, z_val.source, z_val.flags],
+							// };
+						}
+					}
+				}
+			});
+		}
 	});
 };
 
