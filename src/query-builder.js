@@ -138,6 +138,82 @@ const H_PREDICATE_ALIASES = new Map([
 ]);
 
 
+// creates a pattern handler for simple types
+const simple_pattern = (s_type) => {
+
+	// return pattern handler
+	return function(h_gp, add, option) {
+
+		// open clause
+		this.open(s_type);
+
+		// each pattern
+		h_gp.patterns.forEach((h_pattern) => {
+
+			// pass query producing torch to next pattern
+			produce_pattern.apply(this, arguments);
+		});
+
+		// close block
+		this.close(s_type);
+	};
+};
+
+//
+const H_PATTERNS = {
+
+	// basic graph pattern
+	bgp: function(h_gp, add, option) {
+
+		//
+		let s_join = (option.verbose? ' ': '')+'.';
+
+		// each triple in pattern
+		h_gp.triples.map((h_triple) => {
+
+			//
+			add(h_triple.subject
+				+' '+h_triple.predication
+				+' '+h_triple.object
+				+s_terminate);
+		});
+	},
+
+	// minus block
+	minus: simple_pattern('minus'),
+
+	// optional block
+	optional: simple_pattern('optional'),
+
+	// 
+	union: function(h_gp, add, option) {
+
+		// each pattern
+		h_gp.patterns.forEach((h_pattern, i_pattern) => {
+
+			// open group/union block
+			this.open(0===i_pattern? '': 'union');
+
+			// pass query production torch to next pattern
+			produce_pattern.apply(this, arguments);
+
+			// close group block
+			this.close();
+		});
+	},
+};
+
+
+//
+const produce_pattern = function(h_gp, add, option) {
+
+	// ref graph pattern type
+	var s_type = h_gp.type;
+
+	// lookup pattern and apply producer
+	H_PATTERNS.get(s_type).apply(this, arguments);
+};
+
 
 /**
 * @class QueryBuilder
@@ -174,7 +250,47 @@ const __construct = function(h_query) {
 	let h_values_data = new Map();
 
 	//
-	let k_query_producer = new query_producer();
+	const k_query_producer = new query_producer({
+
+		// 
+		prefix: function(add) {
+
+			// add each prefix item
+			h_prologue_prefixes.forEach((p_uri, s_prefix) => {
+				add(`prefix ${p_uri}: <${s_prefix}>`);
+			});
+		},
+
+		//
+		dataset: function(add) {
+
+			// 
+			a_from_default.forEach((s_graph_iri) => {
+				add(`from ${s_graph_iri}`);
+			});
+			a_from_named.forEach((s_graph_iri) => {
+				add(`from named ${s_graph_iri}`);
+			});
+		},
+
+		//
+		where: function(add, option) {
+
+			// open where block
+			this.open('where');
+
+			// recursively transform serialized object form to query string
+			a_where_ggps.forEach((h_ggp) => {
+				
+				//
+				stringify_patterns(h_ggp, add, option);
+			});
+
+			// close where block
+			this.close();
+		},
+
+	}, ['prefix', 'query', 'dataset', 'where', 'solution']);
 
 
 	//
@@ -1025,6 +1141,36 @@ const __construct = function(h_query) {
 		// private fields for select query class
 		let a_select_variables = new Set();
 		let h_select_expressions = new Map();
+
+		// add production to query producer
+		k_query_producer.after('prefix', {
+
+			// define select clause producer
+			select: function(add, option) {
+
+				// select keyword
+				add('select');
+
+				// increase indentation
+				this.tabs += 1;
+
+				// each variable/expression in select clause
+				a_select_variables.forEach((s_var) => {
+
+					// variable is alias for expression
+					if(h_select_expressions.has(s_var)) {
+						add(`${h_select_expressions.get(s_var)} as ${s_var}`, option.verbose);
+					}
+					// plain variable
+					else {
+						add(`${s_var}`, option.verbose);
+					}
+				});
+
+				// decrease indentation
+				this.tabs -= 1;
+			},
+		});
 
 
 		//
