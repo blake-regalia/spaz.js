@@ -66,6 +66,15 @@ const R_IRIREF = /^<([^\s>]+)>$/;
 const R_VALUE_METADATA = /^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)(?:@([A-Za-z]+(?:-[A-Za-z0-9]+)*)|(?:\^\^([^]+)))?$/;
 
 //
+const A_PATTERN_TYPES = new Set([
+	'bgp',
+	'minus',
+	'filter',
+	'optional',
+]);
+
+
+//
 const assert_integer = (z_int, s_who) => {
 
 	// numeric
@@ -163,6 +172,9 @@ const __construct = function(h_query) {
 
 	// values clause
 	let h_values_data = new Map();
+
+	//
+	let k_query_producer = new query_producer();
 
 
 	//
@@ -495,9 +507,40 @@ const __construct = function(h_query) {
 				triples: serialize_triples(a_triple),
 			};
 		}
+		// special type
+		else if('object' === typeof z_group && 'string' === typeof z_group.type) {
+
+			// ref type
+			let s_type = z_group.type.toLowerCase();
+
+			// unrecognized pattern type
+			if(!A_PATTERN_TYPES.has(s_type)) {
+				return debug.fail('serializer does not recognize "'+s_type+'" type pattern block');
+			}
+
+			// work here is done
+			return z_group;
+		}
+		// prefix resolver
+		else if('function' === typeof z_group) {
+
+			// apply resolver function
+			return z_group.apply({
+
+				// pass function means to serialize it's patterns
+				serialize: function(s_type, a_patterns) {
+					return {
+						type: s_type,
+						patterns: a_patterns.map((z_pattern) => {
+							return serialize_group_graph_pattern(z_pattern)
+						})
+					};
+				},
+			});
+		}
 		// 
 		else {
-			debug.fail('serializer does not recognize group type: '+arginfo(z_group));
+			debug.fail('serializer does not recognize argument as a valid serialized SPARQL object: '+arginfo(z_group));
 		}
 	};
 
@@ -719,6 +762,11 @@ const __construct = function(h_query) {
 		// specifiy where clause
 		where(...a_groups) {
 
+			// empty-args getter
+			if(0 === a_groups.length) {
+				return a_where_ggps;
+			}
+
 			//
 			a_groups.forEach((z_group) => {
 
@@ -790,6 +838,8 @@ const __construct = function(h_query) {
 
 		//
 		serialize() {
+
+			// empty-args getter
 			return {
 				type: 'query',
 				queryType: s_query_type.toUpperCase(),
@@ -800,12 +850,14 @@ const __construct = function(h_query) {
 			};
 		}
 
-		toSparql() {
-			var q_generator = new sparql_generator();
-
-			return q_generator.stringify(
-				this.serialize()
-			);
+		toSparql(h_options) {
+			let s_break = ' ';
+			let s_indent = '';
+			if(h_options.pretty) {
+				s_break = '\n';
+				s_indent = '\t';
+			}
+			query_producer.produce(s_break, s_indent);
 		}
 
 		dump() {

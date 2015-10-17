@@ -1,7 +1,6 @@
 'use strict';
 
-const spaz = require('../');
-const should = require('should');
+const spaz = require('../src');
 
 let $$ = new spaz();
 
@@ -123,11 +122,11 @@ describe('.select()', () => {
 				price: '?p * (1 - ?discount)',
 				'?key': '?value',
 			}, '?original as ?alias')
-			.select(true).should.deepEqual({
-				'?price': '?p * (1 - ?discount)',
-				'?key': '?value',
-				'?alias': '?original',
-			})
+			.select(true).should.deepEqual([
+				{variable: '?price', expression: '?p * (1 - ?discount)'},
+				{variable: '?key', expression: '?value'},
+				{variable: '?alias', expression: '?original'},
+			])
 	});
 });
 
@@ -161,16 +160,81 @@ describe('.group/having/order()', () => {
 });
 
 
-describe('ask query', () => {
 
-	let q = $$.build('ask');
+describe('basic query', () => {
 
-	it('generates correct SPARQL string', () => {
+	let q = $$.build('select')
+		.prefix(': </>');
 
-		q.where(
-			$$(':Thing a :Type')
-		).toSparql().should.equal('ask where { :Thing a :Type }')
+	it('supports nested basic graph pattern inputs', () => {
+		q
+			.where(
+				'?a a :A',
+				['?a',':b','?c'],
+				['?d', {
+					a: ':D',
+					':e': '?f',
+					':g': {
+						':h': '?i',
+						':j': {
+							':k': '?l'
+						}
+					}
+				}],
+				['?m', ':n', {
+					':o': '?p',
+					':q': {
+						':r': '?s',
+					}
+				}]
+			).where().should.deepEqual([
+			{ type: 'bgp',
+				triples: [
+					{ subject: '?a',
+						predicate: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+						object: '/A' },
+					{ subject: '?a', predicate: '/b', object: '?c' },
+					{ subject: '?d',
+					predicate: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+					object: '/D' },
+					{ subject: '?d', predicate: '/e', object: '?f' },
+					{ subject: '?d', predicate: '/g', object: '_:b0' },
+					{ subject: '_:b0', predicate: '/h', object: '?i' },
+					{ subject: '_:b0', predicate: '/j', object: '_:b1' },
+					{ subject: '_:b1', predicate: '/k', object: '?l' },
+					{ subject: '?m', predicate: '/n', object: '_:b2' },
+					{ subject: '_:b2', predicate: '/o', object: '?p' },
+					{ subject: '_:b2', predicate: '/q', object: '_:b3' },
+					[ { subject: '_:b3', predicate: '/r', object: '?s' } ]
+				]
+			}]);
 	});
+
+	it('supports minus & optional blocks', () => {
+		q.where.clear()
+			.where(
+				'?a :basic ?b',
+				$$.minus(
+					'?a :minus ?b'
+				),
+				$$.optional(
+					'?a :optional ?b'
+				)
+			)
+			.where().should.deepEqual([
+			  { type: 'bgp',
+			    triples: [ { subject: '?a', predicate: '/basic', object: '?b' } ] },
+			  { type: 'minus',
+			    patterns: 
+			     [ { type: 'bgp',
+			         triples: [ { subject: '?a', predicate: '/minus', object: '?b' } ] } ] },
+			  { type: 'optional',
+			    patterns: 
+			     [ { type: 'bgp',
+			         triples: [ { subject: '?a', predicate: '/optional', object: '?b' } ] } ] }
+			  ]);
+	});
+
 });
 
 describe('subselect', () => {
@@ -187,7 +251,7 @@ describe('subselect', () => {
 					)
 					.order('?x')
 					.group('?name')
-			).toSparql().should.equal(
+			).serialize().should.equal(
 				'select ?y ?name '
 				+'where { ?x foaf:knows ?y . '
 					+'{ select ?y sample(?name) '

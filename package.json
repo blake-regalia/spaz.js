@@ -4,7 +4,9 @@
   "description": "Query linked-data nodes by abstracting away traditional SPARQL and JSON-LD interaction",
   "main": "./lib",
   "scripts": {
-    "test": "mocha --compilers js:babel/register"
+    "compile": "babel -d lib/ src/",
+    "test": "mocha --compilers js:babel/register",
+    "prepublish": "npm run compile"
   },
   "repository": {
     "type": "git",

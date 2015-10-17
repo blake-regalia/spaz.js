@@ -140,10 +140,14 @@ const __construct = function(h_config) {
 	// initialization
 	(() => {
 
-		// prefixes
-		if(h_config.prefixes) {
-			add_prologue_prefix(h_config.prefixes);
-		}
+		// config
+		if(h_config) {
+
+			// prefixes
+			if(h_config.prefixes) {
+				add_prologue_prefix(h_config.prefixes);
+		 	}
+		 }
 	})();
 
 	/**
@@ -152,6 +156,16 @@ const __construct = function(h_config) {
 	const operator = function() {
 
 	};
+
+	// simple group patterns
+	['group','minus','optional'].forEach((s_pattern_type) => {
+		operator[s_pattern_type] = function(...a_patterns) {
+			return function() {
+				return this.serialize(s_pattern_type, a_patterns);
+			};
+		};
+	});
+
 
 	/**
 	* public:
@@ -258,16 +272,13 @@ const __construct = function(h_config) {
 		filter(...a_exprs) {
 
 			//
-			let h_expression = '';
-
-			//
-			a_exprs.map((z_expr) => {
+			let s_expression = a_exprs.map((z_expr) => {
 
 				// SPARQL string
 				if('string' === typeof z_expr) {
 
 					// simple concatenation
-					s_expression += z_expr;
+					return z_expr;
 				}
 				// array indicates special meaning
 				else if(Array.isArray(z_expr)) {
@@ -294,7 +305,7 @@ const __construct = function(h_config) {
 								debug.fail('filter with regular expression expects [string] for `test` argument. instead got: '+arginfo(s_test));
 							}
 
-							return `regex(${s_test},"${z_val.source}","${z_val.flags}")`;
+							return `regex(${s_test},"${z_val.source.replace(/"/g,'\\"')}","${z_val.flags}")`;
 
 							//
 							// return {
@@ -305,8 +316,15 @@ const __construct = function(h_config) {
 						}
 					}
 				}
-			});
-		}
+			}).join('');
+
+			//
+			return {
+				type: 'filter',
+				expression: s_expression,
+			};
+		},
+
 	});
 };
 
