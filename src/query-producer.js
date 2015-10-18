@@ -99,36 +99,82 @@ const __construct = function(h_init_productions, a_init_steps) {
 
 
 	//
-	const produce_query = (s_newline, s_indent_space, h_forward) => {
+	const produce_query = (h_options, h_forward) => {
 
 		// prepare links of strings
 		let a_chunks = [];
+
+		//
+		let s_newline = '';
+		let s_indent_space = '';
+
+		//
+		let b_pretty = false;
+
+		//
+		if(h_options) {
+
+			// pretty option
+			if(h_options.pretty) {
+				b_pretty = true;
+				s_newline = '\n';
+				s_indent_space = '  ';
+			}
+		}
 
 		//
 		let s_indent = '';
 
 		// apply this context to each production callback
 		let k_context = Object.create({
+			pretty: b_pretty,
 			tab_value: 0,
 
+
+			// adds text chunk to query
+			add: function(s_chunk, b_merge_with_previous) {
+
+				// do not insert on new line
+				if(b_merge_with_previous && a_chunks.length) {
+					a_chunks.push(a_chunks.pop()+' '+s_chunk);
+				}
+				// new chunk
+				else {
+					a_chunks.push(s_indent+s_chunk);
+				}
+			},
+
 			// block open helper
-			open: function(s_type) {
+			open: function(s_type, b_same_line) {
+
+				// prepare build open string
+				let s_open = '';
+
+				// open block has a type
+				if(s_type) {
+
+					// looking pretty means spaces after keywords
+					s_open  = s_type+(this.pretty? ' ': '');
+				}
 
 				// open block
-				f_add((s_type||'')+'{');
+				this.add(
+					s_open+'{',
+					b_same_line
+				);
 
 				// increase indentation
-				this.tab_value += 1;
+				this.tabs += 1;
 			},
 
 			//
-			close: () {
-
-				// close block
-				f_add('}');
+			close: function() {
 
 				// decrease indentation
-				this.tab_value -= 1;
+				this.tabs -= 1;
+
+				// close block
+				this.add('}');
 			},
 		}, {
 
@@ -144,25 +190,20 @@ const __construct = function(h_init_productions, a_init_steps) {
 			},
 		});
 
-		// utility method each callback uses to append to query string
-		let f_add = (s_chunk, b_merge_with_previous) => {
 
-			// do not insert on new line
-			if(b_merge_with_previous && a_chunks.length) {
-				a_chunks.push(a_chunks.pop()+' '+s_chunk);
-			}
-			// new chunk
-			else {
-				a_chunks.push(s_indent+s_chunk);
-			}
-		};
-
+		//
+		let h_option = {};
 
 		// synchronous each step
 		a_steps.forEach((s_step) => {
 
+			// no production!
+			if(!h_productions.has(s_step)) {
+				debug.fail('production not found: "'+s_step+'"');
+			}
+
 			// execute production
-			let z_result = h_productions.get(s_step).apply(k_context, [f_add]);
+			let z_result = h_productions.get(s_step).apply(k_context, [k_context.add, h_option]);
 
 			//
 			if('string' === typeof z_produced) {
@@ -201,7 +242,7 @@ const __construct = function(h_init_productions, a_init_steps) {
 
 			// step must exist
 			if(!a_steps.includes(s_step)) {
-				debug.fail('no such step found: '+step);
+				debug.fail('no such step found: '+s_step);
 			}
 			// assert production is function
 			else if('function' !== typeof f_production) {
@@ -210,13 +251,13 @@ const __construct = function(h_init_productions, a_init_steps) {
 
 			//
 			h_productions.set(s_step, f_production);
-		},
+		}
 
 		//
 		produce(h_options) {
 
 			//
-			return produce_query('\n', '\t');
+			return produce_query(h_options);
 		}
 
 	})();

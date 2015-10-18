@@ -165,10 +165,10 @@ const __construct = function(h_config) {
 	};
 
 	// simple group patterns
-	['group','minus','optional'].forEach((s_pattern_type) => {
+	['group','union','minus','optional'].forEach((s_pattern_type) => {
 		operator[s_pattern_type] = function(...a_patterns) {
 			return function() {
-				return this.serialize(s_pattern_type, a_patterns);
+				return this.serialize_pattern(s_pattern_type, a_patterns);
 			};
 		};
 	});
@@ -329,6 +329,45 @@ const __construct = function(h_config) {
 			return {
 				type: 'filter',
 				expression: s_expression,
+			};
+		},
+
+		//
+		exists(...a_groups) {
+
+			//
+			return function() {
+				return this.serialize_filter('exists', a_groups);
+			};
+		},
+
+		// semantic chaining for operations preceeded by 'not'
+		not: {
+
+			// 'not exists'
+			exists(...a_groups)  {
+
+				// 
+				return function() {
+					return this.serialize_filter('not exists', a_groups);
+				};
+			},
+		},
+
+		//
+		sub(h_sub) {
+
+			//
+			debug.warn('the `sub` function is not yet fully supported');
+
+			//
+			return function() {
+				return {
+					type: 'query',
+					queryType: 'SELECT',
+					variables: h_sub.select,
+					where: this.serialize_pattern('where', h_sub.where),
+				};
 			};
 		},
 

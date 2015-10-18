@@ -1,4 +1,4 @@
 {
-	// es6 include
+	"//": "es6 include package",
 	"main": "./"
 }

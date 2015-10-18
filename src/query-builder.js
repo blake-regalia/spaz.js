@@ -10,6 +10,7 @@ let sparqljs = require('sparqljs');
 
 //
 const sparql_generator = sparqljs.Generator;
+const query_producer = require(__dirname+'/query-producer');
 
 // local modules
 const overloader = require(__dirname+'/overloader.js');
@@ -142,7 +143,7 @@ const H_PREDICATE_ALIASES = new Map([
 const simple_pattern = (s_type) => {
 
 	// return pattern handler
-	return function(h_gp, add, option) {
+	return function(h_gp, add) {
 
 		// open clause
 		this.open(s_type);
@@ -151,7 +152,7 @@ const simple_pattern = (s_type) => {
 		h_gp.patterns.forEach((h_pattern) => {
 
 			// pass query producing torch to next pattern
-			produce_pattern.apply(this, arguments);
+			produce_pattern.apply(this, [h_pattern, add]);
 		});
 
 		// close block
@@ -160,24 +161,163 @@ const simple_pattern = (s_type) => {
 };
 
 //
+const sparql_entity = (s_item) => {
+
+	// 
+	switch(s_item[0]) {
+		case '?': // variable
+		case '$': // variable
+		case '"': // literal
+			return s_item;
+
+		case '_': // blanknode
+			if(':' !== s_item[1]) { // iri ref
+				return '<'+s_item+'>';
+			}
+			return s_item;
+
+		default: // iri ref
+			return '<'+s_item+'>';
+	}
+};
+
+
+//
+const stringify_expression = function(z_expression, add) {
+
+	// SPARQL-ready expression
+	if('string' === typeof z_expression) {
+		return add(z_expression, true);
+	}
+	// JSON object
+	else if('object' === typeof z_expression) {
+
+		// depending on expression type
+		switch(z_expression.type) {
+
+			case 'operation':
+
+				// ref operator
+				let s_operator = z_expression.operator;
+
+				// ref args
+				let z_args = z_expression.args;
+
+				// 
+				switch(s_operator) {
+
+					// infix operators
+					case '>': case '<': case '>=': case '<=':
+					case '&&': case '||': case '=': case '!=':
+					case '+': case '-': case '*': case '/':
+
+						// to each argument...
+						z_args.forEach((z_arg, i_arg) => {
+
+							// pass the torch
+							stringify_expression.apply(this, [z_arg, add]);
+
+							// not the last arg
+							if(i_arg < z_args.length-1) {
+
+								// join by operator
+								add(s_operator, true);
+							}
+						});
+						return;
+
+					// unary operators
+					case '!':
+
+						// start with operator
+						add(s_operator, true);
+
+						// stringify the only arg
+						stringify_expression.apply(this, [z_args[0], add]);
+						return;
+
+					// in/not in
+					case 'in': case 'not in':
+
+						// stringify lhs
+						stringify_expression.apply(this, [z_args[0], add]);
+
+						// open list
+						add(' (', true);
+
+						// stringify rhs
+						z_args[1].forEach((z_arg, i_arg, a_list) => {
+
+							// pass the torch
+							stringify_expression.apply(this, [z_arg, add]);
+
+							// not the last list item
+							if(i_arg < a_list.length-1) {
+
+								// join by comma
+								add(', ', true);
+							}
+						});
+
+						// close list
+						add(')', true);
+						return;
+
+					// exists/not exists
+					case 'exists': case 'not exists':
+
+						// open block
+						this.open(s_operator, true);
+
+						// each pattern..
+						z_args.forEach((h_gp) => {
+
+							// pass torch to pattern producer
+							produce_pattern.apply(this, [h_gp, add]);
+						});
+
+						// close block
+						this.close();
+						return;
+
+					//
+					default:
+						debug.fail('expression cannot stringify unrecognized operator: '+s_operator);
+						return;
+				}
+				return;
+		}
+	}
+	//
+	else {
+		debug.fail('filter expects all expressions to be either [string] or [object], instead got: '+arginfo(z_expression));
+	}
+};
+
+
+//
 const H_PATTERNS = {
 
 	// basic graph pattern
-	bgp: function(h_gp, add, option) {
+	bgp: function(h_gp, add) {
 
 		//
-		let s_join = (option.verbose? ' ': '')+'.';
+		let s_terminate = (this.pretty? ' ': '')+'.';
 
 		// each triple in pattern
 		h_gp.triples.map((h_triple) => {
 
 			//
-			add(h_triple.subject
-				+' '+h_triple.predication
-				+' '+h_triple.object
+			add(sparql_entity(h_triple.subject)
+				+' '+sparql_entity(h_triple.predicate)
+				+' '+sparql_entity(h_triple.object)
+				+(h_triple.datatype? '^^<'+h_triple.datatype+'>': '')
 				+s_terminate);
 		});
 	},
+
+	// group block
+	group: simple_pattern(''),
 
 	// minus block
 	minus: simple_pattern('minus'),
@@ -186,7 +326,7 @@ const H_PATTERNS = {
 	optional: simple_pattern('optional'),
 
 	// 
-	union: function(h_gp, add, option) {
+	union: function(h_gp, add) {
 
 		// each pattern
 		h_gp.patterns.forEach((h_pattern, i_pattern) => {
@@ -195,23 +335,49 @@ const H_PATTERNS = {
 			this.open(0===i_pattern? '': 'union');
 
 			// pass query production torch to next pattern
-			produce_pattern.apply(this, arguments);
+			produce_pattern.apply(this, [h_pattern, add]);
 
 			// close group block
 			this.close();
 		});
 	},
+
+	//
+	filter: function(h_gp, add) {
+
+		// ref expression
+		let z_expression = h_gp.expression;
+
+		// expression is a pattern
+		let b_pattern = ('object' === typeof z_expression && ['exists','not exists'].includes(z_expression.operator));
+
+		// open filter
+		add('filter'+(b_pattern?'':'('));
+
+		// pass query producing torch to stringify expression function
+		stringify_expression.apply(this, [h_gp.expression, add]);
+
+		// close filter (if we need it)
+		if(!b_pattern) {
+			add(')', true);
+		}
+	},
 };
 
 
 //
-const produce_pattern = function(h_gp, add, option) {
+const produce_pattern = function(h_gp, add) {
 
 	// ref graph pattern type
 	var s_type = h_gp.type;
 
+	// lookup pattern
+	if(!H_PATTERNS[s_type]) {
+		debug.fail('no such pattern type: "'+s_type+'"; in '+arginfo(h_gp));
+	}
+
 	// lookup pattern and apply producer
-	H_PATTERNS.get(s_type).apply(this, arguments);
+	H_PATTERNS[s_type].apply(this, arguments);
 };
 
 
@@ -257,7 +423,7 @@ const __construct = function(h_query) {
 
 			// add each prefix item
 			h_prologue_prefixes.forEach((p_uri, s_prefix) => {
-				add(`prefix ${p_uri}: <${s_prefix}>`);
+				add(`prefix ${s_prefix}: <${p_uri}>`);
 			});
 		},
 
@@ -274,20 +440,25 @@ const __construct = function(h_query) {
 		},
 
 		//
-		where: function(add, option) {
+		where: function(add) {
 
 			// open where block
-			this.open('where');
+			this.open(this.pretty? 'where': '');
 
 			// recursively transform serialized object form to query string
-			a_where_ggps.forEach((h_ggp) => {
+			a_where_ggps.forEach((h_gp) => {
 				
 				//
-				stringify_patterns(h_ggp, add, option);
+				produce_pattern.apply(this, [h_gp, add]);
 			});
 
 			// close where block
 			this.close();
+		},
+
+		solution: function() {
+
+			//
 		},
 
 	}, ['prefix', 'query', 'dataset', 'where', 'solution']);
@@ -438,7 +609,7 @@ const __construct = function(h_query) {
 			}
 			// type was specified (do not enclose url with angle brackets since sparqljs treats these as full irirefs)
 			else if(s_type) {
-				p_uri += '^^'+expanded(s_type);
+				p_uri += '^^<'+expanded(s_type)+'>';
 			}
 
 			//
@@ -643,13 +814,27 @@ const __construct = function(h_query) {
 			// apply resolver function
 			return z_group.apply({
 
-				// pass function means to serialize it's patterns
-				serialize: function(s_type, a_patterns) {
+				// pass callback the means to serialize it's patterns
+				serialize_pattern: function(s_type, a_patterns) {
 					return {
 						type: s_type,
 						patterns: a_patterns.map((z_pattern) => {
-							return serialize_group_graph_pattern(z_pattern)
-						})
+							return serialize_group_graph_pattern(z_pattern);
+						}),
+					};
+				},
+
+				// pass callback the means to serialize a filer block
+				serialize_filter: function(s_operator, a_patterns) {
+					return {
+						type: 'filter',
+						expression: {
+							type: 'operation',
+							operator: s_operator,
+							args: a_patterns.map((z_pattern) => {
+								return serialize_group_graph_pattern(z_pattern);
+							}),
+						},
 					};
 				},
 			});
@@ -907,9 +1092,15 @@ const __construct = function(h_query) {
 						// append patterns onto existing previous group
 						h_previous.patterns = h_previous.patterns.concat.apply(h_previous.patterns, h_ggp.patterns);
 					}
+					// filters
+					else if(h_ggp.expression) {
+
+						// append new ggp
+						a_where_ggps.push(h_ggp);
+					}
 					// uh-oh
 					else {
-						debug.warn('not sure what to do with '+h_ggp.type+' block because it doesn\'t have triples or patterns to merge. this is probably my fault');
+						debug.warn('not sure what to do with "'+h_ggp.type+'" block because it doesn\'t have triples or patterns to merge. this is probably my fault');
 					}
 				}
 				// previous ggp is non-existent or different type
@@ -967,17 +1158,55 @@ const __construct = function(h_query) {
 		}
 
 		toSparql(h_options) {
-			let s_break = ' ';
-			let s_indent = '';
-			if(h_options.pretty) {
-				s_break = '\n';
-				s_indent = '\t';
+			return k_query_producer.produce(h_options);
+		}
+
+		sparql() {
+
+			// generate the query string
+			let s_query = k_query_producer.produce();
+
+			// prepare to optimize the query string
+			let s_optimized = '';
+
+			// create quoted-string finding regex
+			let r_next_quote = /"(?:[^"\\]|\\.)*"/g;
+
+			// where to start each substring to gather non-string parts of query
+			let i_range_start = 0;
+
+			// find all matches
+			while(true) {
+
+				// bookmark previous match's end
+				i_range_start = r_next_quote.lastIndex;
+
+				// find next quoted string
+				let m_next_quote = r_next_quote.exec(s_query);
+
+				// no match found; stop
+				if(null === m_next_quote) break;
+
+				// optimize non-quoted string
+				s_optimized += s_query.substring(i_range_start, m_next_quote.index).replace(/\s+(?!:|where\b)|\.\s*(})/g, '$1');
+
+				// append quoted string part
+				s_optimized += m_next_quote[0];
 			}
-			query_producer.produce(s_break, s_indent);
+
+			// optimize final non-quoted string
+			s_optimized += s_query.substr(i_range_start).replace(/\s+(?!:|where\b)|\.\s*(\})/g, '$1');
+
+			// return optimized query
+			return s_optimized;
 		}
 
 		dump() {
-			debug.info(this.toSparql());
+			debug.info(this.toSparql({
+				pretty: true
+			}));
+
+			return this;
 		}
 	};
 
@@ -1142,34 +1371,38 @@ const __construct = function(h_query) {
 		let a_select_variables = new Set();
 		let h_select_expressions = new Map();
 
-		// add production to query producer
-		k_query_producer.after('prefix', {
+		// define select clause producer
+		k_query_producer.set('query', function(add) {
 
-			// define select clause producer
-			select: function(add, option) {
+			// select keyword
+			add('select');
 
-				// select keyword
-				add('select');
+			// increase indentation
+			this.tabs += 1;
 
-				// increase indentation
-				this.tabs += 1;
+			// no variables
+			if(!a_select_variables.size) {
+				add('*', true);
+			}
+			// yes variables
+			else {
 
 				// each variable/expression in select clause
 				a_select_variables.forEach((s_var) => {
 
 					// variable is alias for expression
 					if(h_select_expressions.has(s_var)) {
-						add(`${h_select_expressions.get(s_var)} as ${s_var}`, option.verbose);
+						add(`${h_select_expressions.get(s_var)} as ${s_var}`, this.pretty && !this.verbose);
 					}
 					// plain variable
 					else {
-						add(`${s_var}`, option.verbose);
+						add(`${s_var}`, this.pretty && !this.verbose);
 					}
 				});
+			}
 
-				// decrease indentation
-				this.tabs -= 1;
-			},
+			// decrease indentation
+			this.tabs -= 1;
 		});
 
 

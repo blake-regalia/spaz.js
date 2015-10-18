@@ -237,6 +237,34 @@ describe('basic query', () => {
 
 });
 
+
+describe('pattern builder', () => {
+
+	let q = $$.build('select')
+		.prefix(': </>');
+
+	it('supports all pattern types', () => {
+		q.where(
+			$$.union(
+				'?a :basic ?b',
+				'?a :union ?b'
+			),
+			$$.minus(
+				'?a :minus ?b'
+			),
+			$$.optional(
+				'?a :optional ?b'
+			)
+			$$.exists(
+				'?a :exists ?b'
+			),
+			$$.not.exists(
+				'?a :not.exists ?b'
+			)
+		);
+	});
+});
+
 describe('subselect', () => {
 
 	let q = $$.build('select');
