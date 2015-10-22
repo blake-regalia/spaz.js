@@ -209,6 +209,25 @@ const __construct = function(h_config) {
 			map: h_prologue_prefixes,
 		}),
 
+		// new ASK query
+		ask(...a_args) {
+
+			// create new query builder and forward arguments
+			return (new query_builder({
+				parent: operator,
+				type: 'ask',
+			})).where(...a_args);
+		},
+
+		// new SELECT query
+		select(...a_args) {
+
+			// create new query builder and forward arguments
+			return (new query_builder({
+				parent: operator,
+				type: 'select',
+			})).select(...a_args);
+		}
 
 		// query builder
 		build(s_type) {

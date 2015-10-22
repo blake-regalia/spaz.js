@@ -700,8 +700,10 @@ const __construct = function(h_query) {
 			// each predicate/object pair
 			for(let s_predicate in z_blanknode) {
 
-				// serialize this triple
-				a_results.push(
+				// concatenate each individual triple to this results list
+				a_results = a_results.concat.apply(a_results, 
+
+					// serialize this triple
 					serialize_triples([s_blanknode_id, s_predicate, z_blanknode[s_predicate]])
 				);
 			}
@@ -751,7 +753,7 @@ const __construct = function(h_query) {
 				return debug.fail('the subject of a triple-wannabe array must be a [string]. instead got: '+arginfo(z_group[0]));
 			}
 
-			// nestable statement
+			// predicate-nested statement
 			if(2 === z_group.length && 'object' === typeof z_group[1]) {
 
 				// forward to pair serializer
@@ -1362,7 +1364,20 @@ const __construct = function(h_query) {
 	if('ask' === s_query_type) {
 
 		// done!
-		return new basic_query(s_query_type);
+		return new (class extends basic_query {
+			
+			// results method
+			answer(f_okay_answer) {
+
+				// submit a SPARQL query expecting content of type: sparql-results
+				h_parent.submit(this.sparql(), (h_response) => {
+
+					// forward the boolean response value to callback listener
+					f_okay_answer(h_response['boolean']);
+				});
+			}
+
+		})(s_query_type);
 	}
 	// select query
 	else if('select' === s_query_type) {
@@ -1534,11 +1549,6 @@ const __construct = function(h_query) {
 
 		//
 		return new (class extends basic_query {
-
-			//
-			constructor(s_type) {
-				super(s_type);
-			}
 
 			// sets the expressions used for select query
 			select(...z_select) {

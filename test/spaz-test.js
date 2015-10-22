@@ -161,14 +161,13 @@ describe('.group/having/order()', () => {
 
 
 
-describe('basic query', () => {
+describe('pattern builder', () => {
 
 	let q = $$.build('select')
 		.prefix(': </>');
 
 	it('supports nested basic graph pattern inputs', () => {
-		q
-			.where(
+		q.where.clear().where(
 				'?a a :A',
 				['?a',':b','?c'],
 				['?d', {
@@ -187,64 +186,11 @@ describe('basic query', () => {
 						':r': '?s',
 					}
 				}]
-			).where().should.deepEqual([
-			{ type: 'bgp',
-				triples: [
-					{ subject: '?a',
-						predicate: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-						object: '/A' },
-					{ subject: '?a', predicate: '/b', object: '?c' },
-					{ subject: '?d',
-					predicate: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-					object: '/D' },
-					{ subject: '?d', predicate: '/e', object: '?f' },
-					{ subject: '?d', predicate: '/g', object: '_:b0' },
-					{ subject: '_:b0', predicate: '/h', object: '?i' },
-					{ subject: '_:b0', predicate: '/j', object: '_:b1' },
-					{ subject: '_:b1', predicate: '/k', object: '?l' },
-					{ subject: '?m', predicate: '/n', object: '_:b2' },
-					{ subject: '_:b2', predicate: '/o', object: '?p' },
-					{ subject: '_:b2', predicate: '/q', object: '_:b3' },
-					[ { subject: '_:b3', predicate: '/r', object: '?s' } ]
-				]
-			}]);
+			).sparql().should.equal('prefix :</>select*{?a<http://www.w3.org/1999/02/22-rdf-syntax-ns#type></A>.?a</b>?c.?d<http://www.w3.org/1999/02/22-rdf-syntax-ns#type></D>.?d</e>?f.?d</g>_:b0._:b0</h>?i._:b0</j>_:b1._:b1</k>?l.?m</n>_:b2._:b2</o>?p._:b2</q>_:b3._:b3</r>?s}');
 	});
 
-	it('supports minus & optional blocks', () => {
-		q.where.clear()
-			.where(
-				'?a :basic ?b',
-				$$.minus(
-					'?a :minus ?b'
-				),
-				$$.optional(
-					'?a :optional ?b'
-				)
-			)
-			.where().should.deepEqual([
-			  { type: 'bgp',
-			    triples: [ { subject: '?a', predicate: '/basic', object: '?b' } ] },
-			  { type: 'minus',
-			    patterns: 
-			     [ { type: 'bgp',
-			         triples: [ { subject: '?a', predicate: '/minus', object: '?b' } ] } ] },
-			  { type: 'optional',
-			    patterns: 
-			     [ { type: 'bgp',
-			         triples: [ { subject: '?a', predicate: '/optional', object: '?b' } ] } ] }
-			  ]);
-	});
-
-});
-
-
-describe('pattern builder', () => {
-
-	let q = $$.build('select')
-		.prefix(': </>');
-
-	it('supports all pattern types', () => {
-		q.where(
+	it('supports group graph pattern types (union/minus/optional/exists/not.exists)', () => {
+		q.where.clear().where(
 			$$.union(
 				'?a :basic ?b',
 				'?a :union ?b'
@@ -254,55 +200,13 @@ describe('pattern builder', () => {
 			),
 			$$.optional(
 				'?a :optional ?b'
-			)
+			),
 			$$.exists(
 				'?a :exists ?b'
 			),
 			$$.not.exists(
 				'?a :not.exists ?b'
 			)
-		);
+		).sparql().should.equal('prefix :</>select*{{?a</basic>?b}union{?a</union>?b}minus{?a</minus>?b}optional{?a</optional>?b}filterexists{?a</exists>?b}filternotexists{?a</not.exists>?b}}');
 	});
 });
-
-describe('subselect', () => {
-
-	let q = $$.build('select');
-
-	it('works', () => {
-		q.select('?y','?name')
-			.where(
-				['?x', 'foaf:knows', '?y'],
-				$$.select('?y', 'sample(?name)')
-					.where(
-						['?x', 'foaf:name', '?name']
-					)
-					.order('?x')
-					.group('?name')
-			).serialize().should.equal(
-				'select ?y ?name '
-				+'where { ?x foaf:knows ?y . '
-					+'{ select ?y sample(?name) '
-						+'where { ?x foaf:name ?name . } '
-						+'order by ?x '
-						+'group by ?name '
-					+'} '
-				+'}'
-			);
-
-		// SELECT ?y ?name
-		// WHERE {
-		//   ?x foaf:knows ?y .
-		//   {
-		//     SELECT ?y SAMPLE(?name)
-		//     WHERE {
-		//       ?x foaf:name ?name . 
-		//     }
-		//     ORDER BY ?x
-		//     GROUP BY ?name
-		//   }
-		// }
-	});
-});
-
-
