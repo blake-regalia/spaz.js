@@ -1,19 +1,15 @@
 'use strict';
 
 // native imports
-let util = require('util');
+import util from 'util';
 
-// third party libraries
-let merge = require('merge');
-let arginfo = require('arginfo');
-let sparqljs = require('sparqljs');
-
-//
-const sparql_generator = sparqljs.Generator;
-const query_producer = require(__dirname+'/query-producer');
+// libraries
+import merge from 'merge';
+import arginfo from 'arginfo';
 
 // local modules
-const overloader = require(__dirname+'/overloader.js');
+import query_producer from './query-producer';
+import overloader from './overloader';
 
 
 // colored output

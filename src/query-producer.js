@@ -1,10 +1,10 @@
 'use strict';
 
 // native imports
-let util = require('util');
+import util from 'util';
 
-// third-party includes
-let arginfo = require('arginfo');
+// libraries
+import arginfo from 'arginfo';
 
 
 /**

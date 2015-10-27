@@ -1,14 +1,14 @@
 'use strict';
 
 // native imports
-let util = require('util');
+import util from 'util';
 
-// third party libraries
-let extend = require('extend');
+// libraries
+import extend from 'extend';
 
 // local modules
-const overloader = require(__dirname+'/overloader.js')
-const query_builder = require(__dirname+'/query-builder.js');
+import overloader from './overloader';
+import query_builder from './query-builder';
 
 /**
 * private static:
@@ -227,7 +227,7 @@ const __construct = function(h_config) {
 				parent: operator,
 				type: 'select',
 			})).select(...a_args);
-		}
+		},
 
 		// query builder
 		build(s_type) {
