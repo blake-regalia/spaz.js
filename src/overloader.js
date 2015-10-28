@@ -60,6 +60,11 @@ module.exports = function(h_handler) {
 		f_interface.has = h_set.has;
 	}
 
+	// provide `clear` method to user
+	if(h_handler.reset) {
+		f_interface.clear = () => h_handler.reset([]);
+	}
+
 	//
 	return f_interface;
 };

@@ -62,7 +62,7 @@ const R_IRIREF = /^<([^\s>]+)>$/;
 
 const R_VALUE_METADATA = /^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)(?:@([A-Za-z]+(?:-[A-Za-z0-9]+)*)|(?:\^\^([^]+)))?$/;
 
-const R_COMPRESS_SPARQL = /\s+(?!:|(?:from|named|where)\b)|\.\s*(})/g
+const R_COMPRESS_SPARQL = /\s+(?!\w*:|(?:from|named|where)\b)|\.\s*(})|([>])\s+(?=:_)/g;
 
 //
 const A_PATTERN_TYPES = new Set([

@@ -4,6 +4,8 @@ const spaz = require('../src');
 
 let $$ = new spaz();
 
+$$.prefixes.clear();
+
 
 describe('.from()', () => {
 
@@ -186,7 +188,7 @@ describe('pattern builder', () => {
 						':r': '?s',
 					}
 				}]
-			).sparql().should.equal('prefix :</>select*{?a<http://www.w3.org/1999/02/22-rdf-syntax-ns#type></A>.?a</b>?c.?d<http://www.w3.org/1999/02/22-rdf-syntax-ns#type></D>.?d</e>?f.?d</g>_:b0._:b0</h>?i._:b0</j>_:b1._:b1</k>?l.?m</n>_:b2._:b2</o>?p._:b2</q>_:b3._:b3</r>?s}');
+			).sparql().should.equal('prefix :</>select*{?a<http://www.w3.org/1999/02/22-rdf-syntax-ns#type></A>.?a</b>?c.?d<http://www.w3.org/1999/02/22-rdf-syntax-ns#type></D>.?d</e>?f.?d</g> _:b0. _:b0</h>?i. _:b0</j> _:b1. _:b1</k>?l.?m</n> _:b2. _:b2</o>?p. _:b2</q> _:b3. _:b3</r>?s}');
 	});
 
 	it('supports group graph pattern types (union/minus/optional/exists/not.exists)', () => {

@@ -168,10 +168,18 @@ const __construct = function(h_config) {
 	**/
 
 	// parse a SPARQL string and return a query-builder
-	const operator = function(s_sparql) {
+	let operator = function(s_sparql) {
+
+		// prepare to inject prefixes
+		let s_injected_prefixes = '';
+
+		// build prefix strings
+		for(let [s_prefix, p_iri] of h_prologue_prefixes) {
+			s_injected_prefixes += `prefix ${s_prefix}: <${p_iri}>`;
+		}
 
 		//
-		let h_query = (new sparql_parser()).parse(s_sparql);
+		let h_query = (new sparql_parser()).parse(s_injected_prefixes+s_sparql);
 
 		//
 		return (new query_builder({
@@ -194,7 +202,7 @@ const __construct = function(h_config) {
 	/**
 	* public:
 	**/
-	return extend(operator, {
+	operator = extend(operator, {
 
 
 		// adds prefixes to this instance's internal map
@@ -406,6 +414,13 @@ const __construct = function(h_config) {
 		},
 
 	});
+
+	// alias prefix
+	operator.prefixes = operator.prefix;
+
+
+	// 
+	return operator;
 };
 
 
@@ -415,7 +430,7 @@ const __construct = function(h_config) {
 const debug = __exportee[__export_symbol] = function() {
 
 	// called with `new`
-	if(this !== __namespace) {
+	if('undefined' !== typeof this) {
 		return __construct.apply(this, arguments);
 	}
 	// called directly
@@ -433,4 +448,7 @@ const debug = __exportee[__export_symbol] = function() {
 	debug['toString'] = function() {
 		return __class+'()';
 	};
+
+	// prefix output messages to console with class's tag
+	require('./log-tag.js').extend(debug, __class);
 }
