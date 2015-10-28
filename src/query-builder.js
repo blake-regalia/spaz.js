@@ -4,12 +4,12 @@
 import util from 'util';
 
 // libraries
-import merge from 'merge';
 import arginfo from 'arginfo';
+import merge from 'merge';
 
 // local modules
-import query_producer from './query-producer';
 import overloader from './overloader';
+import query_producer from './query-producer';
 
 
 // colored output
@@ -61,6 +61,8 @@ const R_PREFIXED_NAME = new RegExp('^'+S_PNAME_LN+'$');
 const R_IRIREF = /^<([^\s>]+)>$/;
 
 const R_VALUE_METADATA = /^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)(?:@([A-Za-z]+(?:-[A-Za-z0-9]+)*)|(?:\^\^([^]+)))?$/;
+
+const R_COMPRESS_SPARQL = /\s+(?!:|(?:from|named|where)\b)|\.\s*(})/g
 
 //
 const A_PATTERN_TYPES = new Set([
@@ -381,17 +383,17 @@ const produce_pattern = function(h_gp, add) {
 * @class QueryBuilder
 * using closure for private methods and fields
 **/
-const __construct = function(h_query) {
+const __construct = function(h_init) {
 
 	/**
 	* private:
 	**/
 
-	// set query type
-	const s_query_type = h_query.type.toLowerCase();
-
 	// set parent
-	const h_parent = h_query.parent;
+	const h_parent = h_init.parent;
+
+	// set query type
+	const s_query_type = h_init.type.toLowerCase();
 
 	// prefixes
 	let h_prologue_prefixes = new Map();
@@ -410,6 +412,47 @@ const __construct = function(h_query) {
 
 	// values clause
 	let h_values_data = new Map();
+
+
+	// load query directly from hash
+	if(h_init.query) {
+
+		// ref query
+		let h_query = h_init.query;
+
+		// prefixes
+		if(h_query.prefixes) {
+
+			// load each prefix into map
+			for(let s_prefix in h_query.prefixes) {
+				h_prologue_prefixes.set(s_prefix, h_query.prefixes[s_prefix]);
+			}
+		}
+
+		// from graphs
+		if(h_query.from) {
+
+			// ref from
+			let h_from = h_query.from;
+
+			// default
+			if(h_from.default) {
+				h_from.default.forEach(p_graph => a_from_default.add('<'+p_graph+'>'));
+			}
+			// named
+			if(h_from.named) {
+				h_from.named.forEach(p_graph => a_from_named.add('<'+p_graph+'>'));
+			}
+		}
+
+		// where clauses
+		if(h_query.where) {
+			a_where_ggps = h_query.where;
+		}
+
+		// TODO: everything else later
+	}
+
 
 	//
 	const k_query_producer = new query_producer({
@@ -1186,14 +1229,14 @@ const __construct = function(h_query) {
 				if(null === m_next_quote) break;
 
 				// optimize non-quoted string
-				s_optimized += s_query.substring(i_range_start, m_next_quote.index).replace(/\s+(?!:|where\b)|\.\s*(})/g, '$1');
+				s_optimized += s_query.substring(i_range_start, m_next_quote.index).replace(R_COMPRESS_SPARQL, '$1');
 
 				// append quoted string part
 				s_optimized += m_next_quote[0];
 			}
 
 			// optimize final non-quoted string
-			s_optimized += s_query.substr(i_range_start).replace(/\s+(?!:|where\b)|\.\s*(\})/g, '$1');
+			s_optimized += s_query.substr(i_range_start).replace(R_COMPRESS_SPARQL, '$1');
 
 			// return optimized query
 			return s_optimized;
@@ -1381,6 +1424,47 @@ const __construct = function(h_query) {
 		// private fields for select query class
 		let a_select_variables = new Set();
 		let h_select_expressions = new Map();
+
+		// load query directly from hash
+		if(h_init.query) {
+
+			// ref query
+			let h_query = h_init.query;
+
+			// select variables
+			if(h_query.variables) {
+				h_query.variables.forEach(z_field => {
+
+					// simple variable
+					if('string' === typeof z_field) {
+						a_select_variables.add(z_field);
+					}
+					// expression
+					else {
+
+						// add variable
+						a_select_variables.add(z_field.variable);
+
+						// create expression string
+						let s_expr = (function build_expr(z_expr) {
+							if('string' === typeof z_expr) {
+								return z_expr.replace(/\^\^(.+)$/, '^^<$1>');
+							}
+							let s_ = '';
+							switch(z_expr.type) {
+								case 'operation':
+									return z_expr.args.map(build_expr).join(z_expr.operator);
+								default:
+									debug.fail('init loader unrecognized expr type: `'+z_expr.type+'`');
+							}
+						})(z_field.expression);
+
+						// set expression
+						h_select_expressions.set(z_field.variable, s_expr);
+					}
+				});
+			}
+		}
 
 		// define select clause producer
 		k_query_producer.set('query', function(add) {

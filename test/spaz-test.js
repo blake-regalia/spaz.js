@@ -210,3 +210,14 @@ describe('pattern builder', () => {
 		).sparql().should.equal('prefix :</>select*{{?a</basic>?b}union{?a</union>?b}minus{?a</minus>?b}optional{?a</optional>?b}filterexists{?a</exists>?b}filternotexists{?a</not.exists>?b}}');
 	});
 });
+
+
+describe('SPARQL parser', () => {
+
+	let q;
+
+	it('parses simple query', () => {
+		$$('prefix : </> select ?a (?b*1 as ?c) from :default from named :named { ?a :ab ?b }')
+			.sparql().should.equal('prefix :</>select?a?b*"1"^^<http://www.w3.org/2001/XMLSchema#integer>as?c from</default> from named</named>{?a</ab>?b}');
+	});
+});

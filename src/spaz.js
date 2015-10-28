@@ -4,11 +4,17 @@
 import util from 'util';
 
 // libraries
+import arginfo from 'arginfo';
 import extend from 'extend';
+import sparqljs from 'sparqljs';
 
 // local modules
 import overloader from './overloader';
 import query_builder from './query-builder';
+
+//
+const sparql_parser = sparqljs.Parser;
+
 
 /**
 * private static:
@@ -160,8 +166,19 @@ const __construct = function(h_config) {
 	/**
 	* public operator() ():
 	**/
-	const operator = function() {
 
+	// parse a SPARQL string and return a query-builder
+	const operator = function(s_sparql) {
+
+		//
+		let h_query = (new sparql_parser()).parse(s_sparql);
+
+		//
+		return (new query_builder({
+			parent: operator,
+			type: h_query.queryType,
+			query: h_query,
+		}));
 	};
 
 	// simple group patterns
@@ -179,8 +196,6 @@ const __construct = function(h_config) {
 	**/
 	return extend(operator, {
 
-		// expression builder helper functions
-		triple: '',
 
 		// adds prefixes to this instance's internal map
 		prefix: overloader({
