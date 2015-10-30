@@ -235,21 +235,41 @@ const __construct = function(h_config) {
 		// new ASK query
 		ask(...a_args) {
 
-			// create new query builder and forward arguments
-			return (new query_builder({
+			// create new query builder
+			let q_query = new query_builder({
 				parent: operator,
 				type: 'ask',
-			})).where(...a_args);
+			});
+
+			// args were given
+			if(a_args.legth) {
+
+				// forward arguments
+				return q_query.where(...a_args);
+			}
+
+			// return query builder
+			return q_query;
 		},
 
 		// new SELECT query
 		select(...a_args) {
 
-			// create new query builder and forward arguments
-			return (new query_builder({
+			// create new query builder
+			let q_query = new query_builder({
 				parent: operator,
 				type: 'select',
-			})).select(...a_args);
+			});
+
+			// args were given
+			if(a_args.length) {
+
+				// forward arguments
+				return q_query.select(...a_args);
+			}
+
+			// return query builder
+			return q_query;
 		},
 
 		// query builder
