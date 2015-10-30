@@ -413,6 +413,19 @@ const __construct = function(h_config) {
 			};
 		},
 
+
+		// helper functions
+
+
+		// tests if entity is an iri
+		isIri(z_entity) {
+			return (
+				'string' === typeof z_entity
+				&& '?' !== z_entity[0]
+				&& '_:' !== z_entity.substr(0,2)
+			);
+		},
+
 	});
 
 	// alias prefix

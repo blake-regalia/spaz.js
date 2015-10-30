@@ -62,7 +62,7 @@ const R_IRIREF = /^<([^\s>]+)>$/;
 
 const R_VALUE_METADATA = /^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)(?:@([A-Za-z]+(?:-[A-Za-z0-9]+)*)|(?:\^\^([^]+)))?$/;
 
-const R_COMPRESS_SPARQL = /\s+(?!\w*:|(?:from|named|where)\b)|\.\s*(})|([>])\s+(?=:_)/g;
+const R_COMPRESS_SPARQL = /\s+(?!\w*:|(?:in|from|named|where)\b)|\.\s*(})|([>])\s+(?=:_)/g;
 
 //
 const A_PATTERN_TYPES = new Set([
@@ -1174,6 +1174,19 @@ const __construct = function(h_init) {
 		values(...a_values) {
 			
 		}
+
+
+		/**
+		* helpers
+		**/
+
+		// filter where
+		filter(...e_exprs) {
+			return this.where(
+				h_parent.filter.apply(h_parent, e_exprs)
+			);
+		}
+
 
 		toString() {
 			return this.query_type+' query';

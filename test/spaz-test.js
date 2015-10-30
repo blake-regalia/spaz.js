@@ -211,6 +211,11 @@ describe('pattern builder', () => {
 			)
 		).sparql().should.equal('prefix :</>select*{{?a</basic>?b}union{?a</union>?b}minus{?a</minus>?b}optional{?a</optional>?b}filterexists{?a</exists>?b}filternotexists{?a</not.exists>?b}}');
 	});
+
+	it('understands filter where', () => {
+		q.where.clear().filter('?a in (:a :b :c)')
+			.sparql().should.equal('prefix :</>select*{filter(?a in(:a :b :c))}');
+	});
 });
 
 
