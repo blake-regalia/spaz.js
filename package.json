@@ -19,9 +19,9 @@
   "author": "Blake Regalia <blake.regalia@gmail.com> (http://blake-regalia.com)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/blake-regalia/node-spaz/issues"
+    "url": "https://github.com/blake-regalia/spaz.js/issues"
   },
-  "homepage": "https://github.com/blake-regalia/node-spaz",
+  "homepage": "https://github.com/blake-regalia/spaz.js",
   "devDependencies": {
     "babel": "^5.8.23",
     "grunt": "^0.4.5",
