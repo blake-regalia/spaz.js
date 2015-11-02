@@ -8,10 +8,7 @@
     "test": "mocha --compilers js:babel/register",
     "prepublish": "npm run compile"
   },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/blake-regalia/node-spaz.git"
-  },
+  "repository": "blake-regalia/spaz.js",
   "keywords": [
     "spaz",
     "sparql",
