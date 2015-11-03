@@ -1,7 +1,7 @@
 {
   "name": "spaz",
   "version": "0.0.10",
-  "description": "Query linked-data nodes by abstracting away traditional SPARQL and JSON-LD interaction",
+  "description": "Generate SPARQL query strings programatically by using a javascript API",
   "main": "./lib",
   "scripts": {
     "compile": "babel -d lib/ src/",
@@ -18,10 +18,6 @@
   ],
   "author": "Blake Regalia <blake.regalia@gmail.com> (http://blake-regalia.com)",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/blake-regalia/spaz.js/issues"
-  },
-  "homepage": "https://github.com/blake-regalia/spaz.js",
   "devDependencies": {
     "babel": "^5.8.23",
     "grunt": "^0.4.5",
