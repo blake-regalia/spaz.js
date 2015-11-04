@@ -1,5 +1,3 @@
-'use strict';
-
 // native imports
 import util from 'util';
 
@@ -7,6 +5,7 @@ import util from 'util';
 import arginfo from 'arginfo';
 import extend from 'extend';
 import sparqljs from 'sparqljs';
+import request from 'request';
 
 // local modules
 import overloader from './overloader';
@@ -14,6 +13,7 @@ import query_builder from './query-builder';
 
 //
 const sparql_parser = sparqljs.Parser;
+
 
 
 /**
@@ -53,6 +53,167 @@ const map_to_hash = (h_map) => {
 };
 
 
+//
+const A_VALID_TABLE_HTTP_METHODS = ['get','post'];
+const A_VALID_GRAPH_HTTP_METHODS = ['get','post'];
+const A_VALID_UPDATE_HTTP_METHODS = ['put'];
+
+//
+const setup_remote = (h_engine) => {
+
+	// prepare http method to use for table-result queries
+	let s_table_method = A_VALID_TABLE_HTTP_METHODS[0];
+
+	// prepare http method to use for graph-result queries
+	let s_graph_method = A_VALID_GRAPH_HTTP_METHODS[0];
+
+	// prepare results parser
+	let f_parser = (s_body) => {
+		return new Promise((f_resolve, f_reject) => {
+			try {
+				f_resolve(
+					JSON.parse(s_body)
+				);
+			} catch(e) {
+				f_reject(e);
+			}
+		});
+	};
+
+
+	// engine gives method option
+	if(h_engine.http_methods) {
+
+		// ref http methods
+		let h_http_methods = h_engine.http_methods;
+
+		// http method to use for table-result queries
+		if(h_http_methods.table) {
+
+			// invalid http method for table-result queries
+			if(!A_VALID_TABLE_HTTP_METHODS.includes(h_http_methods.table)) {
+				return local.fail('invalid HTTP method to use for table-result queries: '+h_http_methods.table);
+			}
+
+			// set http method for table-result queries
+			s_table_method = h_http_methods.table;
+		}
+
+		// http method to use for graph-result queries
+		if(h_http_methods.graph) {
+
+			// ref http method
+			let s_method = h_http_methods.graph.toLowerCase();
+
+			// invalid http method for table-result queries
+			if(!A_VALID_GRAPH_HTTP_METHODS.includes(s_method)) {
+				return local.fail('invalid HTTP method to use for graph-result queries: '+s_method);
+			}
+
+			// set http method for graph-result queries
+			s_graph_method = s_method;
+		}
+	}
+
+	// engine interface function
+	let k_engine = (s_sparql, s_type) => {
+
+		// prepare http method
+		let s_method;
+
+		// prepare http accept header
+		let s_accept;
+
+		// tabular result query (ASK, SELECT)
+		if('table' === s_type) {
+			s_method = s_table_method;
+			s_accept = 'application/sparql-results+json';
+		}
+		// graph result query (DESCRIBE)
+		else if('graph' === s_type) {
+			s_method = s_graph_method;
+			s_accept = 'application/ld+json';
+		}
+		// invalid execution type
+		else {
+			return local.fail('invalid execution type: '+s_type);
+		}
+
+		// prepare request options
+		let h_request = {
+			method: s_method,
+			url: h_engine.url,
+			headers: {
+				Accept: s_accept,
+			},
+		};
+
+		// set query data
+		let h_query_data = {
+			query: s_sparql
+		};
+
+		// GET method
+		if('get' === s_method) {
+
+			// set query string
+			h_request.qs = h_query_data;
+		}
+		// POST method
+		else if('post' === s_method) {
+
+			// set form data
+			h_request.form = h_query_data;
+		}
+
+		//
+		return new Promise((f_resolve, f_reject) => {
+
+			local.info('submitting request:\n'+arginfo(h_request));
+
+			// submit request
+			request(h_request, (h_err, h_response, s_body) => {
+
+				// 
+				if(h_err) {
+					return f_reject(h_err);
+				}
+
+				// parse body
+				f_parser(s_body)
+					// success
+					.then((h_json) => {
+
+						// forward to callback
+						f_resolve(h_json);
+					})
+					// parse error
+					.catch((e) => {
+
+						// decide how to handle errors
+						f_reject(e);
+						local.fail(e);
+					});
+			});
+		});
+	};
+
+	//
+	return k_engine;
+};
+
+
+// engine setup router
+const setup_engine = (h_engine) => {
+
+	// remote engine type
+	if('remote' === h_engine.type) {
+		return setup_remote(h_engine);
+	}
+
+	//
+	local.fail('unknown engine type "'+h_engine.type+'": '+arginfo(h_engine));
+};
 
 
 
@@ -87,7 +248,7 @@ const __construct = function(h_config) {
 			if(h_prologue_prefixes.get(s_name) !== s_iri) {
 
 				// issue warning
-				debug.warn(`overwriting a global prefix will not change the final uris of prefixed names committed to the graph pattern prior! I hope you understand what this means...\n changing '${s_name}' prefix from <${h_prologue_prefixes.get(s_name)}> to <${s_iri}>`);
+				local.warn(`overwriting a global prefix will not change the final uris of prefixed names committed to the graph pattern prior! I hope you understand what this means...\n changing '${s_name}' prefix from <${h_prologue_prefixes.get(s_name)}> to <${s_iri}>`);
 			}
 		}
 		// prefix not yet defined
@@ -110,7 +271,7 @@ const __construct = function(h_config) {
 
 			// bad prefix name
 			if(!m_name) {
-				return debug.fail('failed to match SPARQL prefix name: '+arginfo(s_name));
+				return local.fail('failed to match SPARQL prefix name: '+arginfo(s_name));
 			}
 
 			// match iri regex
@@ -118,7 +279,7 @@ const __construct = function(h_config) {
 
 			// bad iri
 			if(!m_iri) {
-				return debug.fail('failed to match SPARQL prefix iri: '+arginfo(s_iri));
+				return local.fail('failed to match SPARQL prefix iri: '+arginfo(s_iri));
 			}
 
 			//
@@ -135,7 +296,7 @@ const __construct = function(h_config) {
 
 				// assert string
 				if('string' !== typeof s_iri) {
-					return debug.fail('prefix iri must be [string]. for "'+s_name+'" key it received: '+arginfo(s_iri));
+					return local.fail('prefix iri must be [string]. for "'+s_name+'" key it received: '+arginfo(s_iri));
 				}
 
 				//
@@ -144,11 +305,13 @@ const __construct = function(h_config) {
 		}
 		// other
 		else {
-			return debug.fail('prefix argument must be [string] or [object]. instead got: '+arginfo(z_prefix));
+			return local.fail('prefix argument must be [string] or [object]. instead got: '+arginfo(z_prefix));
 		}
 	};
 
 
+	//
+	let k_engine;
 
 	// initialization
 	(() => {
@@ -159,6 +322,82 @@ const __construct = function(h_config) {
 			// prefixes
 			if(h_config.prefixes) {
 				add_prologue_prefix(h_config.prefixes);
+		 	}
+
+		 	// engine
+		 	if(h_config.engine) {
+
+		 		// ref config engine hash
+		 		let h_config_engine = h_config.engine;
+
+		 		// prepare engine hash
+		 		let h_engine = {};
+
+		 		// remote engine
+		 		if(h_config_engine.endpoint) {
+
+		 			// set remote engine type
+		 			h_engine.type = 'remote';
+
+		 			// ref endpoint
+		 			let z_endpoint = h_config_engine.endpoint;
+
+			 		// endpoint type is string
+			 		if('string' === typeof z_endpoint) {
+			 			h_engine.url = z_endpoint;
+			 		}
+			 		// endpoint type is object
+			 		else if('object' === typeof z_endpoint) {
+
+			 			// not yet supported
+			 			return local.fail('endpoint hash argument not yet supported');
+			 		}
+			 		// invalid type
+			 		else {
+
+			 			// not yet supported
+			 			return local.fail(`unexpected 'engine.endpoint' value type: ${arginfo(z_endpoint)}`);
+			 		}
+
+			 		// set http methods
+			 		if(h_config_engine.http_methods) {
+
+			 			// ref methods
+			 			let z_http_methods = h_config_engine.http_methods;
+
+			 			// http methods type is string
+			 			if('string' === typeof z_http_methods) {
+
+			 				// ref method
+			 				let s_method = z_http_methods.toLowerCase();
+
+			 				// shortcut sets table and graph methods at once
+			 				if(['get','post'].includes(s_method)) {
+			 					h_engine.http_methods = {
+			 						table: s_method,
+			 						graph: s_method,
+			 					};
+			 				}
+			 				// invalid shortcut name
+			 				else {
+			 					local.fail('no such HTTP method shortcut named "'+s_method+'"');
+			 				}
+			 			}
+			 			// http methods type is object
+			 			else if('object' === typeof z_http_methods) {
+
+			 				// set directly
+			 				h_engine.http_methods = z_http_methods;
+			 			}
+			 			// unknown type
+			 			else {
+			 				local.fail(`unexpected 'engine.http_methods' value type: ${arginfo(z_http_methods)}`);
+			 			}
+			 		}
+		 		}
+
+		 		// prepare descriptive hash for setting up endpoint
+		 		k_engine = setup_engine(h_engine);
 		 	}
 		 }
 	})();
@@ -272,6 +511,26 @@ const __construct = function(h_config) {
 			return q_query;
 		},
 
+		// new DESCRIBE query
+		describe(...a_args) {
+
+			// create new query builder
+			let q_query = new query_builder({
+				parent: operator,
+				type: 'describe',
+			});
+
+			// args were given
+			if(a_args.length) {
+
+				// forward arguments
+				return q_query.describe(...a_args);
+			}
+
+			// return query builder
+			return q_query;
+		},
+
 		// query builder
 		build(s_type) {
 			switch(s_type) {
@@ -307,7 +566,7 @@ const __construct = function(h_config) {
 					}
 					// 
 					else if(isNaN(z_value) || !isFinite(z_value)) {
-						return debug.fail('cannot create numeric value for non-finite / NaN type: '+arginfo(z_value));
+						return local.fail('cannot create numeric value for non-finite / NaN type: '+arginfo(z_value));
 					}
 					// float
 					else {
@@ -325,12 +584,12 @@ const __construct = function(h_config) {
 				}
 				// unsupported type
 				else {
-					return debug.fail('.val method does not support this type of value: '+arginfo(z_value));
+					return local.fail('.val method does not support this type of value: '+arginfo(z_value));
 				}
 			}
 			// bad type
 			else if('string' !== typeof s_type) {
-				return debug.fail('cannot use non-string to describe type of val: '+arginfo(s_type));
+				return local.fail('cannot use non-string to describe type of val: '+arginfo(s_type));
 			}
 
 			//
@@ -363,7 +622,7 @@ const __construct = function(h_config) {
 
 							// must be two args
 							if(2 !== z_expr.length) {
-								debug.fail('filter with regular expression must have exactly 2 arguments. instead got '+z_expr.length+': '+arginfo(z_expr));
+								local.fail('filter with regular expression must have exactly 2 arguments. instead got '+z_expr.length+': '+arginfo(z_expr));
 							}
 
 							// ref test arg
@@ -371,7 +630,7 @@ const __construct = function(h_config) {
 
 							// `test` arg needs to be a string
 							if('string' !== typeof s_test) {
-								debug.fail('filter with regular expression expects [string] for `test` argument. instead got: '+arginfo(s_test));
+								local.fail('filter with regular expression expects [string] for `test` argument. instead got: '+arginfo(s_test));
 							}
 
 							return `regex(${s_test},"${z_val.source.replace(/"/g,'\\"')}","${z_val.flags}")`;
@@ -420,7 +679,7 @@ const __construct = function(h_config) {
 		sub(h_sub) {
 
 			//
-			debug.warn('the `sub` function is not yet fully supported');
+			local.warn('the `sub` function is not yet fully supported');
 
 			//
 			return function() {
@@ -446,6 +705,23 @@ const __construct = function(h_config) {
 			);
 		},
 
+		// execution methods
+		submit(s_sparql, s_type, f_okay) {
+
+			// no sparql engine!
+			if(!k_engine) return local.fail('cannot execute query; no SPARQL engine was specified!');
+
+			// execute query!
+			k_engine(s_sparql, s_type)
+				// engine responded
+				.then((h_json) => {
+
+					// forward json to callback
+					f_okay(h_json);
+				})
+				// error
+				.catch();
+		},
 	});
 
 	// alias prefix
@@ -460,7 +736,7 @@ const __construct = function(h_config) {
 /**
 * public static operator() ():
 **/
-const debug = __exportee[__export_symbol] = function() {
+const local = __exportee[__export_symbol] = function() {
 
 	// called with `new`
 	if('undefined' !== typeof this) {
@@ -468,7 +744,7 @@ const debug = __exportee[__export_symbol] = function() {
 	}
 	// called directly
 	else {
-		return debug.fail('not allowed to call '+debug+' without `new` operator');
+		return local.fail('not allowed to call '+local+' without `new` operator');
 	}
 };
 
@@ -478,10 +754,10 @@ const debug = __exportee[__export_symbol] = function() {
 {
 
 	// 
-	debug['toString'] = function() {
+	local['toString'] = function() {
 		return __class+'()';
 	};
 
 	// prefix output messages to console with class's tag
-	require('./log-tag.js').extend(debug, __class);
+	require('./log-tag.js').extend(local, __class);
 }

@@ -20,9 +20,60 @@ $ npm install spaz
 
 ## Query Builder
 
-* [`.from`](#q.from)
-* [`.select`](#q.select)
-* [`.where`](#q.where)
+Creating the builder
+ * [`$$.ask`](#$$.ask)
+ * [`$$.select`](#q.select)
+ * [`$$.describe`](#$$.describe)
+
+Building the query
+ * [`.prefix`](#q.prefix)
+ * [`.from`](#q.from)
+ * [`.select`](#q.select)
+ * [`.where`](#q.where)
+ * [`.limit`](#q.limit)
+ * [`.offset`](#q.offset)
+
+Executing the query
+ * [`.answer`](#q.answer) - for ASK queries
+ * [`.rows`](#q.rows) - for SELECT queries
+ * [`.browse`](#q.browse) - for DESCRIBE queries
+
+
+---------------------------------------
+<a name="$$.ask" />
+
+### $$.ask(...patterns: mixed)
+Creates a builder for an ASK query, then calls `.where(patterns)`.
+
+---------------------------------------
+<a name="$$.select" />
+
+### $$.select(...select_args: mixed)
+Creates a builder for a SELECT query, then calls `.select(select_args)`.
+
+---------------------------------------
+<a name="$$.describe" />
+
+### $$.decsribe(...patterns: mixed)
+Creates a builder for a DESCRIBE query, then calls `.where(patterns)`.
+
+---------------------------------------
+<a name="q.prefix" />
+
+### .prefix()
+Returns a hash of only the prefixes defined on this builder.
+
+### .prefix(include_global: boolean)
+If `include_global` is true, returns a combined hash of the prefixes defined both on this builder and on this spaz instance; otherwise returns same as `.prefix()`
+
+### .prefix(prefixes: hash)
+Adds all key/value pairs in `prefixes`. Expects each key to be the prefix name without the ':' character at the end, and each value to be the full URI without '<' and '>' characters enclosed.
+
+### .prefix.clear()
+Clears all prefixes defined on this builder. Does not affect prefixes defined on this spaz instance.
+
+### .prefixes
+An alias for `.prefix`
 
 ---------------------------------------
 <a name="q.from" />
@@ -43,8 +94,13 @@ Adds URIs to the set of default graphs
 ### .from(graph_uris: hash)
 Will add all items from `graph_uris.default` and `graph_uris.named` to the respective existing graph sets. If defined, expects either a string or an array of strings for each property (`.default` and `.named`). **However if an empty array is given for the `.default` or `.named` property, only that corresponding set will be cleared.**
 
+### .from.clear()
+Clears all graphs from dataset clause.
+
 ---------------------------------------
 <a name="q.select" />
+
+> Only available on SELECT query types (ie: builders created with [`$$.select`]($$.select))
 
 ### .select()
 Returns a list of variables in the current select query. Identical to calling `.select(false)`
@@ -65,8 +121,13 @@ Parses `expression_w_alias` for the expression and aliased variable name, which 
 ### .select(expressions: array[string])
 Creates a new list of select variables from the given `variables` array. Passing an empty array will effectively clear the current selection.
 
+### .select.clear()
+Clears all select variables & expressions.
+
 ---------------------------------------
-<a name="q.select" />
+<a name="q.where" />
+
+> Available on all query types.
 
 ### .where()
 Returns [SPARQL.js JSON representation](https://github.com/RubenVerborgh/SPARQL.js#representation) of group graph patterns as an array of objects.
@@ -75,7 +136,7 @@ Returns [SPARQL.js JSON representation](https://github.com/RubenVerborgh/SPARQL.
 Adds graph patterns to the existing list. See [Building Patterns](#building-patterns).
 
 ### .where.clear()
-Clears all graph patterns from the `WHERE` block.
+Clears all graph patterns.
 
 
 ---------------------------------------
@@ -152,6 +213,66 @@ The examples above only demonstrate appending triples (or in some cases, new bas
  * [$$.bind]
  * [$$.select]
 
+
+---------------------------------------
+<a name="q.answer" />
+
+> Only available on ASK query types (ie: builders created with [`$$.ask`]($$.ask)))
+
+### .answer(yes_or_no: function)
+Executes the ASK query, then calls `yes_or_no(answer: boolean)`
+
+eg:
+```javascript
+$$.ask('ns:Banana a ns:Fruit')
+	.answer(function(b_fruit) {
+		if(b_fruit) {
+			// yes, that triple exists
+		}
+		else {
+			// no, triple does not exist
+		}
+	});
+```
+
+---------------------------------------
+<a name="q.rows" />
+
+> Only available on SELECT queries (ie: builders created with [`$$.select`]($$.select))
+
+### .rows(each: function)
+Executes the SELECT query, then calls `each(row: hash)` where `row` is an element taken from the `.bindings` array in the JSON results object.
+
+eg:
+```javascript
+$$.select('?alias')
+	.where('ns:Banana :alias ?alias')
+	.rows(function(h_row) {
+		do_something(h_row.alias);
+	});
+```
+
+---------------------------------------
+<a name="q.browse" />
+
+> Only available on DESCRIBE queries (ie: builders created with [`$$.select`]($$.select))
+
+### .browse(namespace_iri: string, ready: function)
+Executes the DESCRIBE query, then calls `ready(nodes: array)` where `nodes` is an array [graphy](https://github.com/blake-regalia/graphy.js) nodes namespaced by `namespace_iri`
+
+eg:
+```javascript
+$$.describe('ns:Banana')
+	.browse('ns:', function(a_nodes) {
+		if(!a_nodes.length) console.error('no bananas :(');
+		else {
+			a_nodes.forEach(function(k_node) {
+				k_node.$id+' is a '+k_node.$type; // 'Banana is a Fruit'
+			});
+		}
+	});
+```
+
 ---------------------------------------
 <a name="$$.val" />
 
@@ -164,3 +285,4 @@ $$.val(true); // '"true"^^xsd:boolean'
 $$.val('test'); // '"test"^^xsd:string'
 $$.val('other','my:type'); // '"other"^^my:type'
 ```
+

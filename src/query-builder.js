@@ -85,12 +85,12 @@ const assert_integer = (z_int, s_who) => {
 		}
 		// non-integer
 		else {
-			debug.error(s_who+' requires an integer. instead got '+z_int);
+			local.error(s_who+' requires an integer. instead got '+z_int);
 		}
 	}
 	// not a number
 	else {
-		debug.error(s_who+' requires a number. instead got '+arginfo(z_int));
+		local.error(s_who+' requires a number. instead got '+arginfo(z_int));
 	}
 
 	// default
@@ -280,7 +280,7 @@ const stringify_expression = function(z_expression, add) {
 
 					//
 					default:
-						debug.fail('expression cannot stringify unrecognized operator: '+s_operator);
+						local.fail('expression cannot stringify unrecognized operator: '+s_operator);
 						return;
 				}
 				return;
@@ -288,7 +288,7 @@ const stringify_expression = function(z_expression, add) {
 	}
 	//
 	else {
-		debug.fail('filter expects all expressions to be either [string] or [object], instead got: '+arginfo(z_expression));
+		local.fail('filter expects all expressions to be either [string] or [object], instead got: '+arginfo(z_expression));
 	}
 };
 
@@ -371,7 +371,7 @@ const produce_pattern = function(h_gp, add) {
 
 	// lookup pattern
 	if(!H_PATTERNS[s_type]) {
-		debug.fail('no such pattern type: "'+s_type+'"; in '+arginfo(h_gp));
+		local.fail('no such pattern type: "'+s_type+'"; in '+arginfo(h_gp));
 	}
 
 	// lookup pattern and apply producer
@@ -460,8 +460,16 @@ const __construct = function(h_init) {
 		// 
 		prefix: function(add) {
 
+			// merge global and local prefixes
+			let h_prefixes = new Map();
+			let f_add_here = (p_uri, s_prefix) => {
+				h_prefixes.set(s_prefix, p_uri);
+			};
+			h_parent.prefixes.forEach(f_add_here);
+			h_prologue_prefixes.forEach(f_add_here);
+
 			// add each prefix item
-			h_prologue_prefixes.forEach((p_uri, s_prefix) => {
+			h_prefixes.forEach((p_uri, s_prefix) => {
 				add(`prefix ${s_prefix}: <${p_uri}>`);
 			});
 		},
@@ -524,7 +532,7 @@ const __construct = function(h_init) {
 			if(h_prologue_prefixes.get(s_name) !== s_iri) {
 
 				// issue warning
-				debug.warn(`overwriting a local prefix will not change the final uris of prefixed names committed to the graph pattern prior! I hope you understand what this means...\n changing '${s_name}' prefix from <${h_prologue_prefixes.get(s_name)}> to <${s_iri}>`);
+				local.warn(`overwriting a local prefix will not change the final uris of prefixed names committed to the graph pattern prior! I hope you understand what this means...\n changing '${s_name}' prefix from <${h_prologue_prefixes.get(s_name)}> to <${s_iri}>`);
 			}
 		}
 		// prefix not yet defined (locally)
@@ -534,7 +542,7 @@ const __construct = function(h_init) {
 			if(h_parent.prefix.has(s_name)) {
 				
 				// issue warning
-				debug.warn(`overriding a global prefix by using a local one with the same name will not change the final uris of prefixed names committed to the graph pattern prior! I hope you understand what this means...\n changing '${s_name}' prefix from <${h_parent.prefix.get(s_name)}> to <${s_iri}>`);
+				local.warn(`overriding a global prefix by using a local one with the same name will not change the final uris of prefixed names committed to the graph pattern prior! I hope you understand what this means...\n changing '${s_name}' prefix from <${h_parent.prefix.get(s_name)}> to <${s_iri}>`);
 			}
 		}
 
@@ -557,7 +565,7 @@ const __construct = function(h_init) {
 
 			// bad prefix name
 			if(!m_name) {
-				return debug.fail('failed to match SPARQL prefix name: '+arginfo(s_name));
+				return local.fail('failed to match SPARQL prefix name: '+arginfo(s_name));
 			}
 
 			// match iri regex
@@ -565,7 +573,7 @@ const __construct = function(h_init) {
 
 			// bad iri
 			if(!m_iriref) {
-				return debug.fail('failed to match SPARQL prefix iri ref: '+arginfo(s_iriref));
+				return local.fail('failed to match SPARQL prefix iri ref: '+arginfo(s_iriref));
 			}
 
 			//
@@ -582,7 +590,7 @@ const __construct = function(h_init) {
 
 				// assert string
 				if('string' !== typeof s_iri) {
-					return debug.fail('prefix iri must be [string]. for "'+s_name+'" key it received: '+arginfo(s_iri));
+					return local.fail('prefix iri must be [string]. for "'+s_name+'" key it received: '+arginfo(s_iri));
 				}
 
 				//
@@ -591,7 +599,7 @@ const __construct = function(h_init) {
 		}
 		// other
 		else {
-			return debug.fail('prefix argument must be [string] or [object]. instead got: '+arginfo(z_prefix));
+			return local.fail('prefix argument must be [string] or [object]. instead got: '+arginfo(z_prefix));
 		}
 	};
 
@@ -633,7 +641,7 @@ const __construct = function(h_init) {
 
 			// bad match
 			if(!m_value_metadata) {
-				return debug.fail('failed to parse SPARQL literal: '+arginfo(s_iri));
+				return local.fail('failed to parse SPARQL literal: '+arginfo(s_iri));
 			}
 
 			// destruct match
@@ -671,7 +679,7 @@ const __construct = function(h_init) {
 
 				// not defined globally either
 				if(!s_ref_base) {
-					return debug.fail('no such prefix defined "'+s_name+'"');
+					return local.fail('no such prefix defined "'+s_name+'"');
 				}
 			}
 
@@ -749,7 +757,7 @@ const __construct = function(h_init) {
 		}
 		// unsupported type
 		else {
-			debug.fail('blanknode creation does not support non-object type: '+arginfo(z_blanknode));
+			local.fail('blanknode creation does not support non-object type: '+arginfo(z_blanknode));
 		}
 
 		//
@@ -789,7 +797,7 @@ const __construct = function(h_init) {
 
 			// subject must be a string
 			if('string' !== typeof z_group[0]) {
-				return debug.fail('the subject of a triple-wannabe array must be a [string]. instead got: '+arginfo(z_group[0]));
+				return local.fail('the subject of a triple-wannabe array must be a [string]. instead got: '+arginfo(z_group[0]));
 			}
 
 			// predicate-nested statement
@@ -804,12 +812,12 @@ const __construct = function(h_init) {
 
 			// otherwise must be a triple
 			if(3 !== z_group.length) {
-				return debug.fail('encountered triple-wannabe array that does not have exactly three items: '+arginfo(z_group));
+				return local.fail('encountered triple-wannabe array that does not have exactly three items: '+arginfo(z_group));
 			}
 
 			// predicate must be a string
 			if('string' !== typeof z_group[1]) {
-				return debug.fail('the prediate of a triple-wannabe array must be a [string]. instead got: '+arginfo(z_group[1]));
+				return local.fail('the prediate of a triple-wannabe array must be a [string]. instead got: '+arginfo(z_group[1]));
 			}
 
 			// forward to actual serializer
@@ -826,7 +834,7 @@ const __construct = function(h_init) {
 
 			// must be a triple
 			if(3 !== a_triple.length) {
-				return debug.fail('splitting this SPARQL triple by whitespace did not yield exactly three items: '+arginfo(z_group));
+				return local.fail('splitting this SPARQL triple by whitespace did not yield exactly three items: '+arginfo(z_group));
 			}
 
 			// forward to actual serializer
@@ -843,7 +851,7 @@ const __construct = function(h_init) {
 
 			// unrecognized pattern type
 			if(!A_PATTERN_TYPES.has(s_type)) {
-				return debug.fail('serializer does not recognize "'+s_type+'" type pattern block');
+				return local.fail('serializer does not recognize "'+s_type+'" type pattern block');
 			}
 
 			// work here is done
@@ -882,7 +890,7 @@ const __construct = function(h_init) {
 		}
 		// 
 		else {
-			debug.fail('serializer does not recognize argument as a valid serialized SPARQL object: '+arginfo(z_group));
+			local.fail('serializer does not recognize argument as a valid serialized SPARQL object: '+arginfo(z_group));
 		}
 	};
 
@@ -939,14 +947,14 @@ const __construct = function(h_init) {
 							}
 							// not a string!
 							else {
-								debug.error('invalid from named graph item: '+arginfo(p_graph));
+								local.error('invalid from named graph item: '+arginfo(p_graph));
 							}
 						});
 					}
 				}
 				// bad value in named graph object
 				else {
-					debug.error('from named graph value must be a [string] or [Array]; instead got: '+arginfo(z_named));
+					local.error('from named graph value must be a [string] or [Array]; instead got: '+arginfo(z_named));
 				}
 			}
 
@@ -981,20 +989,20 @@ const __construct = function(h_init) {
 							}
 							// not a string!
 							else {
-								debug.error('invalid from default graph item: '+arginfo(p_graph));
+								local.error('invalid from default graph item: '+arginfo(p_graph));
 							}
 						});
 					}
 				}
 				// bad value in named graph object
 				else {
-					debug.error('from default graph value must be a [string] or [Array]; instead got: '+arginfo(z_default));
+					local.error('from default graph value must be a [string] or [Array]; instead got: '+arginfo(z_default));
 				}
 			}
 		}
 		// bad graph value
 		else {
-			debug.error('cannot add from graph: '+arginfo(z_graph));
+			local.error('cannot add from graph: '+arginfo(z_graph));
 		}
 	};
 
@@ -1055,7 +1063,7 @@ const __construct = function(h_init) {
 						}
 						// non-string
 						else {
-							debug.error('values clause expects data to be [string]. instead got: '+arginfo(s_value));
+							local.error('values clause expects data to be [string]. instead got: '+arginfo(s_value));
 						}
 					});
 				}
@@ -1069,7 +1077,7 @@ const __construct = function(h_init) {
 		}
 		// unexpected type
 		else {
-			debug.fail('values argument must be either [string] or [object]. instead got: '+arginfo(z_block));
+			local.fail('values argument must be either [string] or [object]. instead got: '+arginfo(z_block));
 		}
 	};
 
@@ -1098,7 +1106,7 @@ const __construct = function(h_init) {
 		base() {
 
 			//
-			debug.fail('spaz does not support using the BASE keyword in SPARQL. Instead, use a PREFIX by invoking the .prefix() method');
+			local.fail('spaz does not support using the BASE keyword in SPARQL. Instead, use a PREFIX by invoking the .prefix() method');
 		}
 
 		// specifiy where clause
@@ -1141,7 +1149,7 @@ const __construct = function(h_init) {
 					}
 					// uh-oh
 					else {
-						debug.warn('not sure what to do with "'+h_ggp.type+'" block because it doesn\'t have triples or patterns to merge. this is probably my fault');
+						local.warn('not sure what to do with "'+h_ggp.type+'" block because it doesn\'t have triples or patterns to merge. this is probably my fault');
 					}
 				}
 				// previous ggp is non-existent or different type
@@ -1256,7 +1264,7 @@ const __construct = function(h_init) {
 		}
 
 		dump() {
-			debug.info(this.toSparql({
+			local.info(this.toSparql({
 				pretty: true
 			}));
 
@@ -1380,7 +1388,7 @@ const __construct = function(h_init) {
 				}
 				// non-string
 				else {
-					debug.error(s_method+' clause expects a [string] condition. instead got: '+arginfo(s_condition));
+					local.error(s_method+' clause expects a [string] condition. instead got: '+arginfo(s_condition));
 				}
 			};
 
@@ -1468,7 +1476,7 @@ const __construct = function(h_init) {
 								case 'operation':
 									return z_expr.args.map(build_expr).join(z_expr.operator);
 								default:
-									debug.fail('init loader unrecognized expr type: `'+z_expr.type+'`');
+									local.fail('init loader unrecognized expr type: `'+z_expr.type+'`');
 							}
 						})(z_field.expression);
 
@@ -1549,7 +1557,7 @@ const __construct = function(h_init) {
 					}
 					// key doesn't match
 					else {
-						debug.fail('"'+s_key+'" is an invalid name for a SPARQL variable');
+						local.fail('"'+s_key+'" is an invalid name for a SPARQL variable');
 					}
 				}
 			}
@@ -1599,13 +1607,13 @@ const __construct = function(h_init) {
 					}
 					// invalid variable/expression
 					else {
-						debug.fail('"'+z_expression+'" is either an invalid name for a SPARQL variable, or is an invalid expression to use in a SELECT clause');
+						local.fail('"'+z_expression+'" is either an invalid name for a SPARQL variable, or is an invalid expression to use in a SELECT clause');
 					}
 				}
 			}
 			// argument pass as other
 			else {
-				return debug.fail('must pass [string] to select expression. instead got: '+arginfo(z_expression));
+				return local.fail('must pass [string] to select expression. instead got: '+arginfo(z_expression));
 			}
 		};
 
@@ -1680,7 +1688,7 @@ const __construct = function(h_init) {
 					}
 					// 
 					else {
-						debug.fail('select does not work on: '+arginfo(z_arg0));
+						local.fail('select does not work on: '+arginfo(z_arg0));
 					}
 				}
 				// no args: fetch current variable list as an array
@@ -1717,7 +1725,98 @@ const __construct = function(h_init) {
 
 		})(s_query_type);
 
-	};
+	}
+	// describe query
+	else if('describe' === s_query_type) {
+
+		// describe targets
+		let a_describe_targets = new Set();
+
+		//
+		const add_describe_target = (s_target) => {
+
+			// 
+			a_describe_targets.add(s_target);
+		};
+
+
+		// define describe clause producer
+		k_query_producer.set('query', function(add) {
+
+			// describe keyword
+			add('describe');
+
+			// increase indentation
+			this.tabs += 1;
+
+			// no targets
+			if(!a_describe_targets.size) {
+				
+				//
+				return local.fail('nothing to describe!');
+			}
+
+			// each target in describe clause
+			a_describe_targets.forEach((s_target) => {
+
+				// add target; keep all targets on one line
+				add(s_target, true);
+			});
+
+			// decrease indentation
+			this.tabs -= 1;
+		});
+
+		// done!
+		let describe_query = class extends basic_query {
+			
+			// results method
+			browse(s_namespace, f_ready) {
+
+				// submit a SPARQL query expecting a graph
+				h_parent.submit(this.sparql(), 'graph', (h_response) => {
+
+					local.info(arginfo(h_response));
+
+					// pipe the json-ld object to graphy, then send to callback
+					f_ready(
+						graphy(h_response)
+					);
+				});
+			}
+		};
+
+		// add methods to describe query
+		add_methods(describe_query, {
+
+			// describe target(s)
+			describe: overloader({
+
+				// reset targets, then add new ones
+				reset(a_targets) {
+
+					// clear targets
+					a_describe_targets.clear();
+
+					// apply each target
+					a_targets.forEach(add_describe_target);
+				},
+
+				// returns describe targets as array
+				fetch: () => {
+					return Array.from(a_describe_targets);
+				},
+
+				// add new targets
+				add: (a_targets) => {
+					a_targets.forEach(add_describe_target);
+				},
+			}),
+		});
+
+		// create & return new describe query
+		return new describe_query(s_query_type);
+	}
 
 	// /**
 	// * public operator() ():
@@ -1746,7 +1845,7 @@ const __construct = function(h_init) {
 /**
 * public static operator() ():
 **/
-const debug = __exportee[__export_symbol] = function() {
+const local = __exportee[__export_symbol] = function() {
 
 	// called with `new`
 	if(this !== __namespace) {
@@ -1754,7 +1853,7 @@ const debug = __exportee[__export_symbol] = function() {
 	}
 	// called directly
 	else {
-		return debug.fail('not allowed to call '+debug+' without `new` operator');
+		return local.fail('not allowed to call '+local+' without `new` operator');
 	}
 };
 
@@ -1764,10 +1863,10 @@ const debug = __exportee[__export_symbol] = function() {
 {
 
 	// 
-	debug['toString'] = function() {
+	local.toString = function() {
 		return __class+'()';
 	};
 
 	// prefix output messages to console with class's tag
-	require('./log-tag.js').extend(debug, __class);
+	require('./log-tag.js').extend(local, __class);
 }

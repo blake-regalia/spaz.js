@@ -45,9 +45,10 @@ module.exports = function(h_handler) {
 		// ref map
 		let h_map = h_handler.map;
 
-		// alias getter method(s)
+		// alias some method(s)
 		f_interface.has = h_map.has.bind(h_map);
 		f_interface.get = h_map.get.bind(h_map);
+		f_interface.forEach = h_map.forEach.bind(h_map);
 	}
 
 	// extend method to allow certain access to underlying set

@@ -1,23 +1,27 @@
 {
   "name": "spaz",
   "version": "0.0.11",
-  "description": "Generate SPARQL query strings programatically by using a javascript API",
-  "main": "./lib",
-  "scripts": {
-    "compile": "babel -d lib/ src/",
-    "test": "mocha --compilers js:babel/register",
-    "prepublish": "npm run compile"
+  "description": "Create SPARQL query strings programatically by using this javascript API",
+  "author": {
+    "name": "Blake Regalia",
+    "email": "blake.regalia@gmail.com"
   },
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
   "repository": "blake-regalia/spaz.js",
   "keywords": [
-    "spaz",
-    "sparql",
-    "sparql-js",
+    "SPARQL",
     "linked-data",
+    "semantic-web",
     "json-ld"
   ],
-  "author": "Blake Regalia <blake.regalia@gmail.com> (http://blake-regalia.com)",
-  "license": "MIT",
+  "scripts": {
+    "prepublish": "gulp prepublish",
+    "test": "gulp"
+  },
   "devDependencies": {
     "babel": "^5.8.23",
     "grunt": "^0.4.5",
@@ -31,6 +35,7 @@
     "extend": "^3.0.0",
     "harmony-proxy": "^0.1.0",
     "merge": "^1.2.0",
+    "request": "^2.65.0",
     "sparqljs": "^1.1.3"
   }
 }
