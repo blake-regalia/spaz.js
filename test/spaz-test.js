@@ -1,6 +1,5 @@
-'use strict';
-
-const spaz = require('../src');
+import should from 'should';
+import spaz from '../lib';
 
 let $$ = new spaz();
 
