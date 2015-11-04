@@ -33,6 +33,7 @@
     "arginfo": "^1.0.2",
     "cli-color": "^1.1.0",
     "extend": "^3.0.0",
+    "graphy": "^0.1.4",
     "harmony-proxy": "^0.1.0",
     "merge": "^1.2.0",
     "request": "^2.65.0",

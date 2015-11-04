@@ -6,6 +6,7 @@ import util from 'util';
 // libraries
 import arginfo from 'arginfo';
 import merge from 'merge';
+import graphy from 'graphy';
 
 // local modules
 import overloader from './overloader';
@@ -1776,11 +1777,12 @@ const __construct = function(h_init) {
 				// submit a SPARQL query expecting a graph
 				h_parent.submit(this.sparql(), 'graph', (h_response) => {
 
+					//
 					local.info(arginfo(h_response));
 
 					// pipe the json-ld object to graphy, then send to callback
 					f_ready(
-						graphy(h_response)
+						graphy(h_response).network(s_namespace)
 					);
 				});
 			}

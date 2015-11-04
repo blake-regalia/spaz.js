@@ -169,8 +169,6 @@ const setup_remote = (h_engine) => {
 		//
 		return new Promise((f_resolve, f_reject) => {
 
-			local.info('submitting request:\n'+arginfo(h_request));
-
 			// submit request
 			request(h_request, (h_err, h_response, s_body) => {
 
