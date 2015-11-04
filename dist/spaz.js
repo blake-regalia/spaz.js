@@ -820,14 +820,7 @@ var __construct = function __construct(h_config) {
 **/
 var local = __exportee[__export_symbol] = function () {
 
-	// called with `new`
-	if ('undefined' !== typeof this) {
-		return __construct.apply(this, arguments);
-	}
-	// called directly
-	else {
-			return local.fail('not allowed to call ' + local + ' without `new` operator');
-		}
+	return __construct.apply(this, arguments);
 };
 
 /**
