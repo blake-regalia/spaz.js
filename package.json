@@ -1,6 +1,6 @@
 {
   "name": "spaz",
-  "version": "0.0.18",
+  "version": "0.1.0",
   "description": "Create SPARQL query strings programatically by using this javascript API",
   "author": {
     "name": "Blake Regalia",
