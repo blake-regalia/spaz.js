@@ -45,9 +45,9 @@ var _overloader = require('./overloader');
 
 var _overloader2 = _interopRequireDefault(_overloader);
 
-var _queryBrowser = require('./query-browser');
+var _queryPatterns = require('./query-patterns');
 
-var _queryBrowser2 = _interopRequireDefault(_queryBrowser);
+var _queryPatterns2 = _interopRequireDefault(_queryPatterns);
 
 /**
 * private static:
@@ -1281,9 +1281,9 @@ var __construct = function __construct(h_init) {
 
 			//
 		}, {
-			key: 'browse',
-			value: function browse() {
-				return (0, _queryBrowser2['default'])({
+			key: 'patterns',
+			value: function patterns() {
+				return (0, _queryPatterns2['default'])({
 					prefixes: h_prologue_prefixes,
 					where: a_where_ggps
 				});
