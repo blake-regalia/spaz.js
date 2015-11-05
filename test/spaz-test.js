@@ -1,7 +1,8 @@
+import assert from 'assert';
 import should from 'should';
 import spaz from '../lib';
 
-let $$ = new spaz();
+let $$ = spaz();
 
 $$.prefixes.clear();
 
@@ -11,8 +12,8 @@ describe('.from()', () => {
 	let q = $$.build('select');
 
 	it('supports choosing multiple default graphs', () => {
-		q.from('a','b','c')
-			.from().should.deepEqual(['a','b','c']);
+		q.from('a', 'b', 'c')
+			.from().should.deepEqual(['a', 'b', 'c']);
 	});
 
 	it('clears graphs w/ empty array', () => {
@@ -23,24 +24,24 @@ describe('.from()', () => {
 
 	it('does not allow duplicate default/named graphs', () => {
 		q.from([])
-			.from('a','b',{
-				default: ['b','c'],
-				named: ['a','d','e']
+			.from('a', 'b', {
+				default: ['b', 'c'],
+				named: ['a', 'd', 'e']
 			})
 			.from(true).should.deepEqual({
-				default: ['a','b','c'],
-				named: ['a','d','e'],
+				default: ['a', 'b', 'c'],
+				named: ['a', 'd', 'e'],
 			});
 	});
 
 	it('supports mono-string args in long form', () => {
 		q.from([])
-			.from('a','b',{
+			.from('a', 'b', {
 				default: 'c',
 				named: 'a'
 			})
 			.from(true).should.deepEqual({
-				default: ['a','b','c'],
+				default: ['a', 'b', 'c'],
 				named: ['a'],
 			});
 	});
@@ -90,30 +91,30 @@ describe('.select()', () => {
 	let q = $$.build('select');
 
 	it('supports selecting multiple variables of mix/match prefixes', () => {
-		q.select('a','?b','$c')
+		q.select('a', '?b', '$c')
 			.select().should.deepEqual(['?a', '?b', '?c']);
 	});
 
 	it('does not allow duplicate variables in list', () => {
-		q.select('a','a','b','?b','$c','?c','c','$a')
+		q.select('a', 'a', 'b', '?b', '$c', '?c', 'c', '$a')
 			.select().should.deepEqual(['?a', '?b', '?c']);
 	});
 
 	it('resets variable list w/ * operator', () => {
-		q.select('a','b','c')
+		q.select('a', 'b', 'c')
 			.select('*')
 			.select().should.be.empty();
 	});
-	
+
 	it('clears variables list w/ empty array', () => {
-		q.select('a','b','c')
+		q.select('a', 'b', 'c')
 			.select([])
 			.select().should.be.empty();
 	});
 
 	it('overwrites variables list w/ array', () => {
-		q.select('a','b','c')
-			.select(['d','e','f'])
+		q.select('a', 'b', 'c')
+			.select(['d', 'e', 'f'])
 			.select().should.deepEqual(['?d', '?e', '?f']);
 	});
 
@@ -127,7 +128,7 @@ describe('.select()', () => {
 				{variable: '?price', expression: '?p * (1 - ?discount)'},
 				{variable: '?key', expression: '?value'},
 				{variable: '?alias', expression: '?original'},
-			])
+			]);
 	});
 });
 
@@ -138,7 +139,7 @@ describe('.group/having/order()', () => {
 	let q = $$.build('select');
 
 	it('allows multiple arguments', () => {
-		q.group('a','b','c')
+		q.group('a', 'b', 'c')
 			.group().should.deepEqual(['a', 'b', 'c']);
 	});
 
@@ -148,15 +149,15 @@ describe('.group/having/order()', () => {
 	});
 
 	it('overwrites conditions list w/ array', () => {
-		q.group('a','b','c')
-			.group(['d','e']).group('f')
+		q.group('a', 'b', 'c')
+			.group(['d', 'e']).group('f')
 			.group().should.deepEqual(['d', 'e', 'f']);
 	});
 
 	it('distinguishes between each method', () => {
 		q.having('x')
 			.having().should.deepEqual(['x']);
-	})
+	});
 
 });
 
@@ -170,7 +171,7 @@ describe('pattern builder', () => {
 	it('supports nested basic graph pattern inputs', () => {
 		q.where.clear().where(
 				'?a a :A',
-				['?a',':b','?c'],
+				['?a', ':b', '?c'],
 				['?d', {
 					a: ':D',
 					':e': '?f',
@@ -225,5 +226,30 @@ describe('SPARQL parser', () => {
 	it('parses simple query', () => {
 		$$('prefix : </> select ?a (?b*1 as ?c) from :default from named :named { ?a :ab ?b }')
 			.sparql().should.equal('prefix :</>select?a?b*"1"^^<http://www.w3.org/2001/XMLSchema#integer>as?c from</default> from named</named>{?a</ab>?b}');
+	});
+});
+
+describe('SPARQL browser', () => {
+
+	it('supports basic graph patterns', () => {
+
+		let k_where = $$(`
+			prefix : <vocab://ns/>
+			prefix stko: <vocab://stko/>
+			select ?places {
+				:Test stko:east [
+					:size 10 ;
+					:types (dbp:Mountain dbp:River) ;
+					:are ?places ;
+					:offset [
+						:other "value"
+					]
+				]
+			}
+		`).browse();
+
+		for(let s_subject in k_where) {
+			assert.strictEqual(s_subject, 'vocab://ns/Test');
+		}
 	});
 });

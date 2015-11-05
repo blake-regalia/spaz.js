@@ -22,7 +22,7 @@ import {Instrumenter} from 'isparta';
 
 // static
 gulp.task('static', () => {
-	return gulp.src('lib/index.js')
+	return gulp.src('lib/query-browser.js')
 		.pipe(excludeGitignore())
 		.pipe(eslint())
 		.pipe(eslint.format())

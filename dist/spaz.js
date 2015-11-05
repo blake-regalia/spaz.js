@@ -1,6 +1,10 @@
 // native imports
 'use strict';
 
+Object.defineProperty(exports, '__esModule', {
+	value: true
+});
+
 var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
@@ -45,17 +49,7 @@ var sparql_parser = _sparqljs2['default'].Parser;
 **/
 
 // meta class setup
-var __class = 'Spaz';
-var __namespace = undefined,
-    __exportee = undefined,
-    __export_symbol = undefined;
-
-// node.js
-if (typeof module !== 'undefined' && module.exports) {
-	__namespace = global;
-	__exportee = module;
-	__export_symbol = 'exports';
-}
+var __class_name = 'Spaz';
 
 // class constants
 
@@ -818,7 +812,7 @@ var __construct = function __construct(h_config) {
 /**
 * public static operator() ():
 **/
-var local = __exportee[__export_symbol] = function () {
+var local = function local() {
 
 	return __construct.apply(this, arguments);
 };
@@ -830,9 +824,12 @@ var local = __exportee[__export_symbol] = function () {
 
 	//
 	local['toString'] = function () {
-		return __class + '()';
+		return __class_name + '()';
 	};
 
 	// prefix output messages to console with class's tag
-	require('./log-tag.js').extend(local, __class);
+	require('./log-tag.js').extend(local, __class_name);
 }
+
+exports['default'] = local;
+module.exports = exports['default'];
