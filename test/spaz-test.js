@@ -229,27 +229,35 @@ describe('SPARQL parser', () => {
 	});
 });
 
-describe('SPARQL browser', () => {
+// describe('SPARQL browser', () => {
 
-	it('supports basic graph patterns', () => {
+// 	it('supports basic graph patterns', () => {
 
-		let k_where = $$(`
-			prefix : <vocab://ns/>
-			prefix stko: <vocab://stko/>
-			select ?places {
-				:Test stko:east [
-					:size 10 ;
-					:types (dbp:Mountain dbp:River) ;
-					:are ?places ;
-					:offset [
-						:other "value"
-					]
-				]
-			}
-		`).browse();
+// 		let k_where = $$(`
+// 			prefix : <vocab://ns/>
+// 			prefix stko: <vocab://stko/>
+// 			select ?places {
+// 				:Test stko:east [
+// 					:size 10 ;
+// 					:types (dbp:Mountain dbp:River) ;
+// 					:are ?places ;
+// 					:offset [
+// 						:other "value"
+// 					]
+// 				]
+// 			}
+// 		`).browse();
 
-		for(let s_subject in k_where) {
-			assert.strictEqual(s_subject, 'vocab://ns/Test');
-		}
-	});
-});
+// 		for(let [s_subject, s_predicate, z_object] of k_what.depth_first()) {
+
+// 			// end of line
+// 			if('string' === typeof z_object) {
+// 				console.info(`${s_subject} ${s_predicate} ${z_object}`);
+// 			}
+// 			// keep going
+// 			else {
+// 				inspect(z_object);
+// 			}
+// 		}
+// 	});
+// });
