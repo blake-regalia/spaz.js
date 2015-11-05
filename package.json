@@ -35,7 +35,8 @@
     "gulp-mocha": "^2.0.0",
     "gulp-nsp": "^0.4.5",
     "gulp-plumber": "^1.0.0",
-    "isparta": "^3.0.3"
+    "isparta": "^3.0.3",
+    "should": "^7.1.1"
   },
   "dependencies": {
     "arginfo": "^1.1.2",
@@ -44,7 +45,7 @@
     "graphy": "^0.1.5",
     "harmony-proxy": "^0.1.0",
     "merge": "^1.2.0",
-    "rapunzel": "^0.0.4",
+    "rapunzel": "^0.1.5",
     "request": "^2.65.0",
     "rmprop": "^1.0.0",
     "sparqljs": "^1.1.3"

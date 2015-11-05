@@ -20,7 +20,7 @@ import {Instrumenter} from 'isparta';
 
 // static
 gulp.task('static', () => {
-	return gulp.src('lib/query-browser.js')
+	return gulp.src('lib/query-builder.js')
 		.pipe(excludeGitignore())
 		.pipe(eslint())
 		.pipe(eslint.format())
@@ -42,8 +42,8 @@ gulp.task('pre-test', () => {
 		.pipe(istanbul.hookRequire());
 });
 
-// test
-gulp.task('test', ['pre-test'], (cb) => {
+// mocha
+gulp.task('mocha', [], (cb) => {
 	let mochaErr;
 	gulp.src('test/**/*.js')
 		.pipe(plumber())
@@ -56,6 +56,9 @@ gulp.task('test', ['pre-test'], (cb) => {
 			cb(mochaErr);
 		});
 });
+
+// test
+gulp.task('test', ['pre-test', 'mocha']);
 
 // coveralls
 gulp.task('coveralls', ['test'], () => {
