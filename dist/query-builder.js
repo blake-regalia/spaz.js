@@ -1520,7 +1520,7 @@ var __construct = function __construct(h_init) {
 				value: function answer(f_okay_answer) {
 
 					// submit a SPARQL query expecting content of type: sparql-results
-					h_parent.submit(this.sparql(), function (h_response) {
+					h_parent.submit(this.sparql(), 'table', function (h_response) {
 
 						// forward the boolean response value to callback listener
 						f_okay_answer(h_response['boolean']);

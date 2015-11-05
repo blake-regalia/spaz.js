@@ -181,7 +181,7 @@ var setup_remote = function setup_remote(h_engine) {
 			}
 			// invalid execution type
 			else {
-					return local.fail('invalid execution type: ' + s_type);
+					return local.fail('invalid SPARQL execution type: ' + s_type);
 				}
 
 		// prepare request options
