@@ -35,15 +35,15 @@ var _graphy = require('graphy');
 
 var _graphy2 = _interopRequireDefault(_graphy);
 
+var _rapunzel = require('rapunzel');
+
+var _rapunzel2 = _interopRequireDefault(_rapunzel);
+
 // local modules
 
 var _overloader = require('./overloader');
 
 var _overloader2 = _interopRequireDefault(_overloader);
-
-var _queryProducer = require('./query-producer');
-
-var _queryProducer2 = _interopRequireDefault(_queryProducer);
 
 var _queryBrowser = require('./query-browser');
 
@@ -175,21 +175,20 @@ var H_PREDICATE_ALIASES = new Map([['a', 'http://www.w3.org/1999/02/22-rdf-synta
 var simple_pattern = function simple_pattern(s_type) {
 
 	// return pattern handler
-	return function (h_gp, add) {
-		var _this = this;
+	return function (add, h_gp) {
 
 		// open clause
-		this.open(s_type);
+		add.open(s_type + (add.pretty ? ' ' : '') + '{');
 
 		// each pattern
 		h_gp.patterns.forEach(function (h_pattern) {
 
 			// pass query producing torch to next pattern
-			produce_pattern.apply(_this, [h_pattern, add]);
+			produce_pattern(add, h_pattern);
 		});
 
 		// close block
-		this.close(s_type);
+		add.close('}');
 	};
 };
 
@@ -219,8 +218,7 @@ var sparql_entity = function sparql_entity(s_item) {
 };
 
 //
-var stringify_expression = function stringify_expression(z_expression, add) {
-	var _this2 = this;
+var stringify_expression = function stringify_expression(add, z_expression) {
 
 	// SPARQL-ready expression
 	if ('string' === typeof z_expression) {
@@ -252,7 +250,7 @@ var stringify_expression = function stringify_expression(z_expression, add) {
 							z_args.forEach(function (z_arg, i_arg) {
 
 								// pass the torch
-								stringify_expression.apply(_this2, [z_arg, add]);
+								stringify_expression(add, z_arg);
 
 								// not the last arg
 								if (i_arg < z_args.length - 1) {
@@ -270,14 +268,14 @@ var stringify_expression = function stringify_expression(z_expression, add) {
 							add(s_operator, true);
 
 							// stringify the only arg
-							stringify_expression.apply(this, [z_args[0], add]);
+							stringify_expression(add, z_args[0]);
 							return;
 
 						// in/not in
 						case 'in':case 'not in':
 
 							// stringify lhs
-							stringify_expression.apply(this, [z_args[0], add]);
+							stringify_expression(add, z_args[0]);
 
 							// open list
 							add(' (', true);
@@ -286,7 +284,7 @@ var stringify_expression = function stringify_expression(z_expression, add) {
 							z_args[1].forEach(function (z_arg, i_arg, a_list) {
 
 								// pass the torch
-								stringify_expression.apply(_this2, [z_arg, add]);
+								stringify_expression(add, z_arg);
 
 								// not the last list item
 								if (i_arg < a_list.length - 1) {
@@ -304,17 +302,17 @@ var stringify_expression = function stringify_expression(z_expression, add) {
 						case 'exists':case 'not exists':
 
 							// open block
-							this.open(s_operator, true);
+							add.open(s_operator + (add.pretty ? ' ' : '') + '{', '', true);
 
 							// each pattern..
 							z_args.forEach(function (h_gp) {
 
 								// pass torch to pattern producer
-								produce_pattern.apply(_this2, [h_gp, add]);
+								produce_pattern(add, h_gp);
 							});
 
 							// close block
-							this.close();
+							add.close('}');
 							return;
 
 						//
@@ -335,10 +333,10 @@ var stringify_expression = function stringify_expression(z_expression, add) {
 var H_PATTERNS = {
 
 	// basic graph pattern
-	bgp: function bgp(h_gp, add) {
+	bgp: function bgp(add, h_gp) {
 
 		//
-		var s_terminate = (this.pretty ? ' ' : '') + '.';
+		var s_terminate = (add.pretty ? ' ' : '') + '.';
 
 		// each triple in pattern
 		h_gp.triples.map(function (h_triple) {
@@ -358,25 +356,24 @@ var H_PATTERNS = {
 	optional: simple_pattern('optional'),
 
 	//
-	union: function union(h_gp, add) {
-		var _this3 = this;
+	union: function union(add, h_gp) {
 
 		// each pattern
 		h_gp.patterns.forEach(function (h_pattern, i_pattern) {
 
 			// open group/union block
-			_this3.open(0 === i_pattern ? '' : 'union');
+			add.open((0 === i_pattern ? '' : 'union ') + '{');
 
 			// pass query production torch to next pattern
-			produce_pattern.apply(_this3, [h_pattern, add]);
+			produce_pattern(add, h_pattern);
 
 			// close group block
-			_this3.close();
+			add.close('}');
 		});
 	},
 
 	//
-	filter: function filter(h_gp, add) {
+	filter: function filter(add, h_gp) {
 
 		// ref expression
 		var z_expression = h_gp.expression;
@@ -385,10 +382,10 @@ var H_PATTERNS = {
 		var b_pattern = 'object' === typeof z_expression && ['exists', 'not exists'].includes(z_expression.operator);
 
 		// open filter
-		add('filter' + (b_pattern ? '' : '('));
+		add('filter' + (add.pretty ? ' ' : '') + (b_pattern ? '' : '(') + ' ');
 
 		// pass query producing torch to stringify expression function
-		stringify_expression.apply(this, [h_gp.expression, add]);
+		stringify_expression(add, h_gp.expression);
 
 		// close filter (if we need it)
 		if (!b_pattern) {
@@ -398,7 +395,7 @@ var H_PATTERNS = {
 };
 
 //
-var produce_pattern = function produce_pattern(h_gp, add) {
+var produce_pattern = function produce_pattern(add, h_gp) {
 
 	// ref graph pattern type
 	var s_type = h_gp.type;
@@ -409,7 +406,7 @@ var produce_pattern = function produce_pattern(h_gp, add) {
 	}
 
 	// lookup pattern and apply producer
-	H_PATTERNS[s_type].apply(this, arguments);
+	H_PATTERNS[s_type](add, h_gp);
 };
 
 /**
@@ -490,7 +487,7 @@ var __construct = function __construct(h_init) {
 	}
 
 	//
-	var k_query_producer = new _queryProducer2['default']({
+	var k_query_producer = (0, _rapunzel2['default'])({
 
 		//
 		prefix: function prefix(add) {
@@ -523,23 +520,22 @@ var __construct = function __construct(h_init) {
 
 		//
 		where: function where(add) {
-			var _this4 = this;
 
 			// open where block
-			this.open(this.pretty ? 'where' : '');
+			add.open((add.pretty ? 'where ' : '') + '{');
 
 			// recursively transform serialized object form to query string
 			a_where_ggps.forEach(function (h_gp) {
 
 				//
-				produce_pattern.apply(_this4, [h_gp, add]);
+				produce_pattern(add, h_gp);
 			});
 
 			// close where block
-			this.close();
+			add.close('}');
 		},
 
-		solution: function solution() {
+		solution: function solution(add) {
 
 			//
 		}
@@ -1127,7 +1123,7 @@ var __construct = function __construct(h_init) {
 		//
 
 		function basic_query(s_type) {
-			var _this5 = this;
+			var _this = this;
 
 			_classCallCheck(this, basic_query);
 
@@ -1141,7 +1137,7 @@ var __construct = function __construct(h_init) {
 				a_where_ggps.length = 0;
 
 				// enable chaining
-				return _this5;
+				return _this;
 			};
 		}
 
@@ -1302,7 +1298,9 @@ var __construct = function __construct(h_init) {
 			value: function sparql() {
 
 				// generate the query string
-				var s_query = k_query_producer.produce();
+				var s_query = k_query_producer.produce({
+					pretty: false
+				});
 
 				// prepare to optimize the query string
 				var s_optimized = '';
@@ -1498,6 +1496,13 @@ var __construct = function __construct(h_init) {
 	// ask query
 	if ('ask' === s_query_type) {
 
+		// define query-specific clause for producer
+		k_query_producer.set('query', function (add) {
+
+			// ASK keyword, all done!
+			add('ask');
+		});
+
 		// done!
 		return new ((function (_basic_query) {
 			_inherits(_class, _basic_query);
@@ -1577,13 +1582,9 @@ var __construct = function __construct(h_init) {
 
 				// define select clause producer
 				k_query_producer.set('query', function (add) {
-					var _this6 = this;
 
 					// select keyword
-					add('select');
-
-					// increase indentation
-					this.tabs += 1;
+					add.open('select');
 
 					// no variables
 					if (!a_select_variables.size) {
@@ -1597,17 +1598,17 @@ var __construct = function __construct(h_init) {
 
 								// variable is alias for expression
 								if (h_select_expressions.has(s_var)) {
-									add(h_select_expressions.get(s_var) + ' as ' + s_var, _this6.pretty && !_this6.verbose);
+									add(h_select_expressions.get(s_var) + ' as ' + s_var, add.ugly);
 								}
 								// plain variable
 								else {
-										add('' + s_var, _this6.pretty && !_this6.verbose);
+										add('' + s_var, add.ugly);
 									}
 							});
 						}
 
 					// decrease indentation
-					this.tabs -= 1;
+					add.close();
 				});
 
 				//
@@ -1886,11 +1887,8 @@ var __construct = function __construct(h_init) {
 					// define describe clause producer
 					k_query_producer.set('query', function (add) {
 
-						// describe keyword
-						add('describe');
-
-						// increase indentation
-						this.tabs += 1;
+						// describe keyword; increase indentation
+						add.open('describe');
 
 						// no targets
 						if (!a_describe_targets.size) {
@@ -1907,7 +1905,7 @@ var __construct = function __construct(h_init) {
 						});
 
 						// decrease indentation
-						this.tabs -= 1;
+						add.close();
 					});
 
 					// done!
