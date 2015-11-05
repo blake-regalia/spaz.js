@@ -214,12 +214,22 @@ var setup_remote = function setup_remote(h_engine) {
 		//
 		return new Promise(function (f_resolve, f_reject) {
 
+			// wrap rejector with http request info
+			var f_reject_http = function f_reject_http(s_msg) {
+				f_reject(s_msg + '\nrequest data: ' + (0, _arginfo2['default'])(h_request));
+			};
+
 			// submit request
 			(0, _request2['default'])(h_request, function (h_err, h_response, s_body) {
 
 				//
 				if (h_err) {
-					return f_reject(h_err);
+					return f_reject_http(h_err);
+				}
+
+				// not okay response
+				if (200 !== h_response.statusCode) {
+					return f_reject_http('Bad HTTP response from host: ' + h_response.statusCode + ' - ' + h_response.statusMessage);
 				}
 
 				// parse body
@@ -805,7 +815,9 @@ var __construct = function __construct(h_config) {
 				f_okay(h_json);
 			})
 			// error
-			['catch']();
+			['catch'](function (s_msg) {
+				local.fail('SPARQL engine failure:\n' + s_msg);
+			});
 		},
 
 		//
