@@ -1,5 +1,3 @@
-'use strict';
-
 // native imports
 import path from 'path';
 

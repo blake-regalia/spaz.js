@@ -1,6 +1,9 @@
+// native imports
 'use strict';
 
-// native imports
+Object.defineProperty(exports, '__esModule', {
+	value: true
+});
 
 var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
 
@@ -42,25 +45,16 @@ var _queryProducer = require('./query-producer');
 
 var _queryProducer2 = _interopRequireDefault(_queryProducer);
 
-// colored output
-require('./console-color.js');
+var _queryBrowser = require('./query-browser');
+
+var _queryBrowser2 = _interopRequireDefault(_queryBrowser);
 
 /**
 * private static:
 **/
 
 // meta class setup
-var __class = 'QueryBuilder';
-var __namespace = undefined,
-    __exportee = undefined,
-    __export_symbol = undefined;
-
-// node.js
-if (typeof module !== 'undefined' && module.exports) {
-	__namespace = global;
-	__exportee = module;
-	__export_symbol = 'exports';
-}
+var __class_name = 'QueryBuilder';
 
 // class constants
 
@@ -1151,6 +1145,8 @@ var __construct = function __construct(h_init) {
 			};
 		}
 
+		// add methods to basic query class
+
 		// don't use BASE, ever.
 
 		_createClass(basic_query, [{
@@ -1286,6 +1282,16 @@ var __construct = function __construct(h_init) {
 					where: a_where_ggps
 				};
 			}
+
+			//
+		}, {
+			key: 'browse',
+			value: function browse() {
+				return (0, _queryBrowser2['default'])({
+					prefixes: h_prologue_prefixes,
+					where: a_where_ggps
+				});
+			}
 		}, {
 			key: 'toSparql',
 			value: function toSparql(h_options) {
@@ -1346,9 +1352,6 @@ var __construct = function __construct(h_init) {
 		return basic_query;
 	})();
 
-	;
-
-	// add methods to basic query class
 	add_methods(basic_query, {
 
 		// adds prefixes to this query's internal map
@@ -1997,16 +2000,18 @@ var __construct = function __construct(h_init) {
 /**
 * public static operator() ():
 **/
-var local = __exportee[__export_symbol] = function () {
+var local = function local() {
 
-	// called with `new`
-	if (this !== __namespace) {
-		return __construct.apply(this, arguments);
-	}
-	// called directly
-	else {
-			return local.fail('not allowed to call ' + local + ' without `new` operator');
-		}
+	return __construct.apply(this, arguments);
+
+	// // called with `new`
+	// if(this !== __namespace) {
+	// 	return __construct.apply(this, arguments);
+	// }
+	// // called directly
+	// else {
+	// 	return local.fail('not allowed to call '+local+' without `new` operator');
+	// }
 };
 
 /**
@@ -2016,11 +2021,14 @@ var local = __exportee[__export_symbol] = function () {
 
 	//
 	local.toString = function () {
-		return __class + '()';
+		return __class_name + '()';
 	};
 
 	// prefix output messages to console with class's tag
-	require('./log-tag.js').extend(local, __class);
+	require('./log-tag.js').extend(local, __class_name);
 }
+
+exports['default'] = local;
+module.exports = exports['default'];
 
 // split by colon

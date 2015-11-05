@@ -31,6 +31,10 @@ var _request = require('request');
 
 var _request2 = _interopRequireDefault(_request);
 
+var _rapunzel = require('rapunzel');
+
+var _rapunzel2 = _interopRequireDefault(_rapunzel);
+
 // local modules
 
 var _overloader = require('./overloader');
@@ -43,6 +47,9 @@ var _queryBuilder2 = _interopRequireDefault(_queryBuilder);
 
 //
 var sparql_parser = _sparqljs2['default'].Parser;
+
+// colored output
+require(__dirname + '/console-color.js');
 
 /**
 * private static:
@@ -479,7 +486,7 @@ var __construct = function __construct(h_config) {
 		var h_query = new sparql_parser().parse(s_injected_prefixes + s_sparql);
 
 		//
-		return new _queryBuilder2['default']({
+		return (0, _queryBuilder2['default'])({
 			parent: _operator,
 			type: h_query.queryType,
 			query: h_query
@@ -535,7 +542,7 @@ var __construct = function __construct(h_config) {
 		ask: function ask() {
 
 			// create new query builder
-			var q_query = new _queryBuilder2['default']({
+			var q_query = (0, _queryBuilder2['default'])({
 				parent: _operator,
 				type: 'ask'
 			});
@@ -560,7 +567,7 @@ var __construct = function __construct(h_config) {
 		select: function select() {
 
 			// create new query builder
-			var q_query = new _queryBuilder2['default']({
+			var q_query = (0, _queryBuilder2['default'])({
 				parent: _operator,
 				type: 'select'
 			});
@@ -585,7 +592,7 @@ var __construct = function __construct(h_config) {
 		describe: function describe() {
 
 			// create new query builder
-			var q_query = new _queryBuilder2['default']({
+			var q_query = (0, _queryBuilder2['default'])({
 				parent: _operator,
 				type: 'describe'
 			});
@@ -611,7 +618,7 @@ var __construct = function __construct(h_config) {
 			switch (s_type) {
 				case 'ask':
 				case 'select':
-					return new _queryBuilder2['default']({
+					return (0, _queryBuilder2['default'])({
 						parent: _operator,
 						type: s_type
 					});
@@ -639,7 +646,7 @@ var __construct = function __construct(h_config) {
 						if (Number.isInteger(z_value)) {
 							s_type = 'xsd:integer';
 						}
-						//
+						// non-finite / NaN
 						else if (isNaN(z_value) || !isFinite(z_value)) {
 								return local.fail('cannot create numeric value for non-finite / NaN type: ' + (0, _arginfo2['default'])(z_value));
 							}
@@ -799,6 +806,55 @@ var __construct = function __construct(h_config) {
 			})
 			// error
 			['catch']();
+		},
+
+		//
+		stringify: function stringify(h_thing) {
+
+			//
+			var stringify_thing = function stringify_thing(add, z_thing) {
+
+				// ref thing type
+				var s_type = typeof z_thing;
+
+				// string
+				if ('string' === s_type) {
+					add('\'' + z_thing.replace(/'/g, '\\\'') + '\'', true);
+				}
+				// object
+				else if ('object' === s_type) {
+
+						// array
+						if (Array.isArray(z_thing)) {
+							this.open('[ ', ',', true);
+							for (var i_item in z_thing) {
+								add('');
+								stringify_thing.apply(this, [add, z_thing[i_item]]);
+							}
+							this.close(']');
+						}
+						// plain object
+						else {
+								this.open('{', ',', true);
+								for (var s_property in z_thing) {
+									add('\'' + s_property.replace(/'/g, '\\\'') + '\': ');
+									stringify_thing.apply(this, [add, z_thing[s_property]]);
+								}
+								this.close('}');
+							}
+					}
+			};
+
+			var k_code = (0, _rapunzel2['default'])({
+				body: function body(add) {
+					return stringify_thing.apply(this, [add, h_thing]);
+				}
+			});
+
+			//
+			return k_code.produce({
+				indent: '    '
+			});
 		}
 	});
 
@@ -823,7 +879,7 @@ var local = function local() {
 {
 
 	//
-	local['toString'] = function () {
+	local.toString = function () {
 		return __class_name + '()';
 	};
 
