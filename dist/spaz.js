@@ -824,47 +824,44 @@ var __construct = function __construct(h_config) {
 		},
 
 		//
-		stringify: function stringify(h_thing) {
+		stringify: function stringify(z_thing) {
 
 			//
-			var stringify_thing = function stringify_thing(add, z_thing) {
+			var stringify_thing = function stringify_thing(add, z_item) {
 
 				// ref thing type
-				var s_type = typeof z_thing;
+				var s_type = typeof z_item;
 
 				// string
 				if ('string' === s_type) {
-					add('\'' + z_thing.replace(/'/g, '\\\'') + '\'', true);
+					add('\'' + z_item.replace(/'/g, '\\\'') + '\'', true);
 				}
-				// object
-				else if ('object' === s_type) {
-
-						// array
-						if (Array.isArray(z_thing)) {
-							this.open('[ ', ',', true);
-							for (var i_item in z_thing) {
-								add('');
-								stringify_thing.apply(this, [add, z_thing[i_item]]);
-							}
-							this.close(']');
+				// array
+				else if (Array.isArray(z_item)) {
+						add.open('[ ', ',', true);
+						for (var i_item in z_item) {
+							add('');
+							stringify_thing(add, z_item[i_item]);
 						}
-						// plain object
-						else {
-								this.open('{', ',', true);
-								for (var s_property in z_thing) {
-									add('\'' + s_property.replace(/'/g, '\\\'') + '\': ');
-									stringify_thing.apply(this, [add, z_thing[s_property]]);
-								}
-								this.close('}');
-							}
+						add.close(']');
 					}
+					// object / function
+					else if ('object' === s_type || 'function' === s_type) {
+
+							add.open('{', ',', true);
+							for (var s_property in z_item) {
+								add('\'' + s_property.replace(/'/g, '\\\'') + '\': ');
+								stringify_thing(add, z_item[s_property]);
+							}
+							add.close('}');
+						}
 			};
 
 			var k_code = (0, _rapunzel2['default'])({
 				body: function body(add) {
-					return stringify_thing.apply(this, [add, h_thing]);
+					return stringify_thing(add, z_thing);
 				}
-			});
+			}, ['body']);
 
 			//
 			return k_code.produce({
