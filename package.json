@@ -42,7 +42,7 @@
     "arginfo": "^1.1.2",
     "cli-color": "^1.1.0",
     "extend": "^3.0.0",
-    "graphy": "^0.1.8",
+    "graphy": "^0.1.9",
     "harmony-proxy": "^0.1.0",
     "merge": "^1.2.0",
     "rapunzel": "^0.1.5",
