@@ -1236,12 +1236,28 @@ var __construct = function __construct(h_init) {
    * helpers
    **/
 
+			// basic graph pattern
+		}, {
+			key: 'bgp',
+			value: function bgp() {
+				for (var _len2 = arguments.length, a_triples = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+					a_triples[_key2] = arguments[_key2];
+				}
+
+				return this.where(a_triples.map(function (h_triple) {
+					if (!Array.isArray(h_triple)) {
+						return [h_triple.subject, h_triple.predicate, h_triple.object];
+					}
+					return h_triple;
+				}));
+			}
+
 			// filter where
 		}, {
 			key: 'filter',
 			value: function filter() {
-				for (var _len2 = arguments.length, e_exprs = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-					e_exprs[_key2] = arguments[_key2];
+				for (var _len3 = arguments.length, e_exprs = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+					e_exprs[_key3] = arguments[_key3];
 				}
 
 				return this.where(h_parent.filter.apply(h_parent, e_exprs));
@@ -1775,8 +1791,8 @@ var __construct = function __construct(h_init) {
 
 							// sets the expressions used for select query
 							value: function select() {
-								for (var _len3 = arguments.length, z_select = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-									z_select[_key3] = arguments[_key3];
+								for (var _len4 = arguments.length, z_select = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+									z_select[_key4] = arguments[_key4];
 								}
 
 								// ref args length and 0th arg
