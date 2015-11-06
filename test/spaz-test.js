@@ -229,6 +229,13 @@ describe('SPARQL parser', () => {
 	});
 });
 
+// describe('browse', () => {
+
+// 	it('stringifies', () => {
+		
+// 	});
+// });
+
 describe('ask -> answer', () => {
 
 	// it('catches bad HTTP response', () => {
