@@ -162,6 +162,20 @@ describe('.group/having/order()', () => {
 });
 
 
+describe('.values()', () => {
+
+	let q = $$.build('select')
+		.prefix(': </>');
+
+	it('supports values hash', () => {
+		q.values({
+			'?var': ':NamedThing',
+		}).sparql().should.deepEqual('prefix :</>select*{values?var{ :NamedThing}}');
+	});
+
+});
+
+
 
 describe('pattern builder', () => {
 
@@ -232,7 +246,7 @@ describe('SPARQL parser', () => {
 // describe('browse', () => {
 
 // 	it('stringifies', () => {
-		
+
 // 	});
 // });
 
