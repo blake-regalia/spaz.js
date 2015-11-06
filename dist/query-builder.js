@@ -31,10 +31,6 @@ var _merge = require('merge');
 
 var _merge2 = _interopRequireDefault(_merge);
 
-var _graphy = require('graphy');
-
-var _graphy2 = _interopRequireDefault(_graphy);
-
 var _rapunzel = require('rapunzel');
 
 var _rapunzel2 = _interopRequireDefault(_rapunzel);
@@ -1933,9 +1929,6 @@ var __construct = function __construct(h_init) {
 
 									// send graph data to callback
 									f_ready.apply(_this2, [
-
-									// pipe the json-ld object to graphy
-									(0, _graphy2['default'])(h_response).network(s_namespace),
 
 									// send callback normal json-ld
 									h_response,
