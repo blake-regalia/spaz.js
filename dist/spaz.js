@@ -810,8 +810,12 @@ var __construct = function __construct(h_config) {
 			// engine responded
 			.then(function (h_json) {
 
-				// forward json to callback
-				f_okay(h_json);
+				// escape the grips of the promise
+				setImmediate(function () {
+
+					// forward json to callback
+					f_okay(h_json);
+				});
 			})
 			// error
 			['catch'](function (s_msg) {
