@@ -1927,9 +1927,6 @@ var __construct = function __construct(h_init) {
 								// submit a SPARQL query expecting a graph
 								h_parent.submit(this.sparql(), 'graph', function (h_response) {
 
-									//
-									local.info((0, _arginfo2['default'])(h_response));
-
 									// pipe the json-ld object to graphy, then send to callback
 									f_ready((0, _graphy2['default'])(h_response).network(s_namespace));
 								});

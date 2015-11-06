@@ -121,7 +121,7 @@ var setup_remote = function setup_remote(h_engine) {
 			try {
 				f_resolve(JSON.parse(s_body));
 			} catch (e) {
-				f_reject(e);
+				f_reject('response body could not be parsed: ' + e);
 			}
 		});
 	};
@@ -245,7 +245,6 @@ var setup_remote = function setup_remote(h_engine) {
 
 					// decide how to handle errors
 					f_reject(e);
-					local.fail(e);
 				});
 			});
 		});
