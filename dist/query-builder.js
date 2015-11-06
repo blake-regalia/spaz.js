@@ -1923,6 +1923,7 @@ var __construct = function __construct(h_init) {
 
 							// results method
 							value: function browse(s_namespace, f_ready) {
+								var _this2 = this;
 
 								//
 								var s_sparql = this.sparql();
@@ -1931,7 +1932,7 @@ var __construct = function __construct(h_init) {
 								h_parent.submit(s_sparql, 'graph', function (h_response) {
 
 									// send graph data to callback
-									f_ready.apply({}, [
+									f_ready.apply(_this2, [
 
 									// pipe the json-ld object to graphy
 									(0, _graphy2['default'])(h_response).network(s_namespace),
