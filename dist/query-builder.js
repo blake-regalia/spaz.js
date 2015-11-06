@@ -1924,17 +1924,27 @@ var __construct = function __construct(h_init) {
 							// results method
 							value: function browse(s_namespace, f_ready) {
 
+								//
+								var s_sparql = this.sparql();
+
 								// submit a SPARQL query expecting a graph
-								h_parent.submit(this.sparql(), 'graph', function (h_response) {
+								h_parent.submit(s_sparql, 'graph', function (h_response) {
 
 									// send graph data to callback
-									f_ready(
+									f_ready.apply({}, [
+
 									// pipe the json-ld object to graphy
 									(0, _graphy2['default'])(h_response).network(s_namespace),
 
-									// also send callback the normal json-ld
-									h_response);
+									// send callback normal json-ld
+									h_response,
+
+									// include sparql string that was sent to engine
+									s_sparql]);
 								});
+
+								// continue chaining
+								return this;
 							}
 						}]);
 
