@@ -45,7 +45,7 @@
     "graphy": "^0.1.9",
     "harmony-proxy": "^0.1.0",
     "merge": "^1.2.0",
-    "rapunzel": "^0.1.6",
+    "rapunzel": "^0.1.7",
     "request": "^2.65.0",
     "rmprop": "^1.0.0",
     "sparqljs": "^1.1.3"

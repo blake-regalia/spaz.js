@@ -17,6 +17,12 @@ $ npm install spaz
 ### Introduction
 
 
+### Terminology used in this document
+
+ * **hash** - refers to a typical plain javascript object that has keys and values (eg: `{key: 'value'}`)
+ * **list** - refers to a 1-dimensional javascript array
+ * **item** - refers to an element in a javacsript array
+
 
 ## Query Builder
 
@@ -30,8 +36,18 @@ Building the query
  * [`.from`](#q.from)
  * [`.select`](#q.select)
  * [`.where`](#q.where)
+ * [`.values`](#q.values)
  * [`.limit`](#q.limit)
  * [`.offset`](#q.offset)
+
+Creating graph patterns
+ * [`$$.union`]
+ * [`$$.minus`]
+ * [`$$.graph`]
+
+Triple helpers
+ * [`$$.val`]
+ * [`$$.triple`]
 
 Executing the query
  * [`.answer`](#q.answer) - for ASK queries
@@ -147,8 +163,12 @@ Clears all graph patterns.
 
 ### Introduction
 
-Single pattern statements can be made using strings:
-```javascript
+Each `pattern` argument passed to the `.where` method is interpretted independently based on its type. The following section documents the various types of arguments the `.where` method accepts, and the implications of each.
+
+#### Strings
+
+Any argument that is a string (ie: `'string' === typeof pattern`), is directly added to the query's where block as raw SPARQL:
+```js
 q.where(
 	'?person a foaf:Person',
 	'?person foaf:name ?name',
@@ -156,9 +176,13 @@ q.where(
 	'?friend foaf:name "Steve Brule"^^xsd:string'
 );
 ```
+> These SPARQL strings will only be parsed if subsequent calls to this query builder instance require inspecting its graph patterns. Each string argument will be automatically terminated with a '.' unless it ends with one of the following characters: ',' ';' '}'
 
-You can also separate the subject, predicate and object by using an array:
-```javascript
+
+#### Arrays
+
+To take advantage of this module's features, you can separate the subject, predicate and object by using an array:
+```js
 q.where(
 	['?person','a','foaf:Person'],
 	['?person','foaf:name','?name'],
@@ -167,40 +191,111 @@ q.where(
 );
 ```
 
-Even better yet, arrays let you make nestable statements:
-```javascript
+Arrays let you make nestable statements:
+```js
 q.where(
+	// re-use `?person` as the subject for several triples
 	['?person', {
-		a: 'foaf:Person',
-		'foaf:name': '?name',
-		'foaf:knows': {    // this will create a blanknode
-			'foaf:name': '"Steve Brule"^^xsd:string'
+
+		// all keys are treated as SPARQL strings
+		a: 'foaf:Person', // (eg: `a` is short for `rdf:type` in SPARQL)
+
+		// string values are also treated as SPARQL strings 
+		'foaf:name': '?name', // (eg: `?name` is a variable)
+
+		// array values indicate object lists (ie: re-using same preciate)
+		'ns:alias': ['"Joe"', '"John"', '"Jo"'],
+
+		// hash values indicate a new blanknode
+		'foaf:knows': {
+			'foaf:name': $$.val('Steve Brule'),
 		},
 	}]
 );
 ```
 
-Following the previous example, if you wanted to create a variable instead of a blanknode:
-```javascript
+This yields:
+```sparql
+{
+	?person
+		a foaf:Person ;
+		foaf:name '?name' ;
+		ns:alias "Joe", "John", "Jo" ;
+		foaf:knows [
+			foaf:name "Steve Brule"^^xsd:string
+		] .
+}
+```
+> In the example above, `$$.val` is invoked to generate `'"Steve Brule"^^xsd:string`. See [$$.val](#$$.val) for more deatil.
+
+
+If you need an ordered list, you can produce an `rdf:collection` by using [$$.collection]
+```js
 q.where(
-	['?person', {
-		a: 'foaf:Person',
-		'foaf:name': '?name',
-		'foaf:knows': '?friend',
-	}],
-	['?friend', 'foaf:name', $$.val('Steve Brule')]
+	['?plant', {
+		'ns:stages': $$.collection([
+			'ns:FindSpace',
+			'plant:Seed',
+			'plant:Grow',
+			'plant:Harvest',
+		]),
+	}]
 );
 ```
-Here, `$$.val` is invoked to generate `'"Steve Brule"^^xsd:string`. See [$$.val](#$$.val) for more deatil.
 
 Arrays allow nesting from the predicate (as shown above) as well as from the subject (which triggers the creation of a blanknode):
-```javascript
+```js
 q.where(
 	['?person', 'foaf:knows', {    // this will create a blanknode
 		'foaf:name': $$.val('Steve Brule')
 	}]
 );
 ```
+
+You can also specify multiple objects using the same predicate by using an array:
+```js
+q.where(
+	['?person', {
+		'foaf:alias': ['"Joe"', '"John"', '"Jo"'],
+	}]
+);
+```
+
+#### Hashes
+
+A hash argument can be one of two types. Either it has a `type` property (in which case it is treated as a prescribed pattern), or it does not have a `type` property (in which case it is treated as a blanknode).
+
+##### Hash Blanknode
+
+To create a blanknode at the top-level:
+```js
+q.where(
+	{
+		a: 'ns:Fruit',
+		'ns:color': 'color:Yellow',
+		'ns:name': '?fruitName',
+	}
+);
+```
+
+yields:
+```sparql
+{
+	[
+		a ns:Fruit ;
+		ns:color color:Yellow ;
+		ns:name ?fruitName
+	] .
+}
+```
+
+#### Hash Prescribed Pattern
+```js
+q.where(
+	
+);
+```
+
 
 The examples above only demonstrate appending triples (or in some cases, new basic graph patterns) to an existing group pattern (or empty group). For other types of patterns, groups and expressions, use these `$$.` methods:
  * [$$.graph]
@@ -215,6 +310,61 @@ The examples above only demonstrate appending triples (or in some cases, new bas
 
 
 ---------------------------------------
+<a name="q.values" />
+
+> Available on all query types.
+
+### .values()
+Returns a list of the current values block. Each item in the list is a hash who's keys are variable names and values are the variables corresponding subtitution value as a ttl string.
+
+### .values(combo: hash)
+Adds the given `combo` to the existing values block. If any key in `combo` is not included in the current variable list, it will be added and all other combos that do not have said key will use an `UNDEF` as their value.
+
+### .values(combos: array)
+Adds each item in `combos` to the existing values block. Also performs the same auto-correct feature as the method above.
+
+### .values(variable: string, data: array)
+Creates a simple values block that substitues values for only a single variable. This will clear all values in the current values block.
+
+### .values.clear()
+Clears all values from the values block.
+
+eg:
+```js
+q.values({fruit: ':Orange'});
+
+q.values([
+	{
+		fruit: ':Banana',
+		color: $$.val('yellow')
+	},
+	{
+		fruit: ':Apple',
+		color: ['color:red', '"green"'],
+	},
+	{
+		fruit: ':Strawberry',
+		color: {
+			type: 'literal',
+			value: 'red',
+			datatype: 'vocab://local/color'
+		}
+	}
+]);
+```
+
+yields:
+```sparql
+VALUES (?fruit ?color) {
+	(:Orange UNDEF)
+	(:Banana "yellow"^^xsd:string)
+	(:Apple (color:red "green"))
+	(:Strawberry "red"^^<vocab://local/color>)
+}
+```
+
+
+---------------------------------------
 <a name="q.answer" />
 
 > Only available on ASK query types (ie: builders created with [`$$.ask`]($$.ask)))
@@ -223,7 +373,7 @@ The examples above only demonstrate appending triples (or in some cases, new bas
 Executes the ASK query, then calls `yes_or_no(answer: boolean)`
 
 eg:
-```javascript
+```js
 $$.ask('ns:Banana a ns:Fruit')
 	.answer(function(b_fruit) {
 		if(b_fruit) {
@@ -244,7 +394,7 @@ $$.ask('ns:Banana a ns:Fruit')
 Executes the SELECT query, then calls `each(row: hash)` where `row` is an element taken from the `.bindings` array in the JSON results object.
 
 eg:
-```javascript
+```js
 $$.select('?alias')
 	.where('ns:Banana :alias ?alias')
 	.rows(function(h_row) {
@@ -261,7 +411,7 @@ $$.select('?alias')
 Executes the DESCRIBE query, then calls `ready(nodes: array)` where `nodes` is an array [graphy](https://github.com/blake-regalia/graphy.js) nodes namespaced by `namespace_iri`
 
 eg:
-```javascript
+```js
 $$.describe('ns:Banana')
 	.browse('ns:', function(a_nodes) {
 		if(!a_nodes.length) console.error('no bananas :(');
@@ -278,7 +428,7 @@ $$.describe('ns:Banana')
 
 ### $$.val(value: boolean/number/string[, type: string])
 Produces a SPARQL-ready string representation of a literal value:
-```javascript
+```js
 $$.val(2); // '"2"^^xsd:integer'
 $$.val(2.5); // '"2.5"^^xsd:decimal'
 $$.val(true); // '"true"^^xsd:boolean'
