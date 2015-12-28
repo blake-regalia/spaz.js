@@ -40,6 +40,7 @@
   },
   "dependencies": {
     "arginfo": "^1.1.2",
+    "array-unique": "^0.2.1",
     "cli-color": "^1.1.0",
     "extend": "^3.0.0",
     "graphy": "^0.1.9",
