@@ -1,6 +1,6 @@
 # spaz
 
-## WARNING: This package is currently under development! It is essentially vaporware right now. Do not download this code expecting anything to work. This README documents the future capabilities of this package.
+## WARNING: This package is currently under development! This README documents the current/future capabilities of this package.
 
 
 ## Install
@@ -229,7 +229,7 @@ This yields:
 > In the example above, `$$.val` is invoked to generate `'"Steve Brule"^^xsd:string`. See [$$.val](#$$.val) for more deatil.
 
 
-If you need an ordered list, you can produce an `rdf:collection` by using [$$.collection]
+If you need an ordered list, you can produce an `rdf:collection` by using [$$.collection](#$$.collection)
 ```js
 q.where(
 	['?plant', {
@@ -243,7 +243,7 @@ q.where(
 );
 ```
 
-Arrays allow nesting from the predicate (as shown above) as well as from the subject (which triggers the creation of a blanknode):
+Embedding a triple in an array allows nesting hashes in the predicate position (as shown above) to reuse the same subject; it also allows nesting hashes in the object position, which triggers the creation of a blanknode as shown here:
 ```js
 q.where(
 	['?person', 'foaf:knows', {    // this will create a blanknode
@@ -252,7 +252,7 @@ q.where(
 );
 ```
 
-You can also specify multiple objects using the same predicate by using an array:
+You can also specify multiple objects (known as an object-list in N3) by using an array in the object position:
 ```js
 q.where(
 	['?person', {
@@ -298,15 +298,15 @@ q.where(
 
 
 The examples above only demonstrate appending triples (or in some cases, new basic graph patterns) to an existing group pattern (or empty group). For other types of patterns, groups and expressions, use these `$$.` methods:
- * [$$.graph]
- * [$$.union]
- * [$$.optional]
- * [$$.minus]
- * [$$.filter]
- * [$$.values]
- * [$$.service]
- * [$$.bind]
- * [$$.select]
+ * [$$.graph](#$$.graph)
+ * [$$.union](#$$.union)
+ * [$$.optional](#$$.optional)
+ * [$$.minus](#$$.minus)
+ * [$$.filter](#$$.filter)
+ * [$$.values](#$$.values)
+ * [$$.service](#$$.service)
+ * [$$.bind](#$$.bind)
+ * [$$.select](#$$.select)
 
 
 ---------------------------------------
