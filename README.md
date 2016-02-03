@@ -24,14 +24,14 @@ $ npm install spaz
  * **item** - refers to an element in a javacsript array
 
 
-## Query Builder
+## SPARQL Query Builder
 
 Creating the builder
  * [`$$.ask`](#$$.ask)
- * [`$$.select`](#q.select)
+ * [`$$.select`](#$$.select)
  * [`$$.describe`](#$$.describe)
 
-Building the query
+Modifying the query
  * [`.prefix`](#q.prefix)
  * [`.from`](#q.from)
  * [`.select`](#q.select)
@@ -53,6 +53,21 @@ Executing the query
  * [`.answer`](#q.answer) - for ASK queries
  * [`.rows`](#q.rows) - for SELECT queries
  * [`.browse`](#q.browse) - for DESCRIBE queries
+
+---------------------------------------
+
+## N3 Serializer
+
+Creating the builder
+ * [`$$.ttl`](#$$.ttl)
+ * [`$$.nquad`](#$$.nquad)
+
+Modifying the document
+ * [`.prefix`](#n.prefix)
+ * [`.add`](#n.add)
+
+Generating the document
+ * [`.render`](#n.render)
 
 
 ---------------------------------------

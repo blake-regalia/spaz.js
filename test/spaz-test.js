@@ -257,6 +257,13 @@ describe('ask -> answer', () => {
 	// });
 });
 
+describe('ttl document', () => {
+
+	it('serializes', () => {
+		
+	});
+});
+
 // describe('SPARQL browser', () => {
 
 // 	it('supports basic graph patterns', () => {
