@@ -80,6 +80,11 @@ compileConfig.transpile.forEach((s_directory) => {
 // transpile source code using babel
 gulp.task('babel', compileConfig.transpile.map(s_directory => 'build-'+s_directory));
 
+// monitor lib and update
+gulp.task('develop', ['babel'], () => {
+	gulp.watch('./lib/**/*', ['babel']);
+});
+
 // test
 gulp.task('test', ['pre-test', 'mocha']);
 

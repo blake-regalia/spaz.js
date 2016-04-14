@@ -1,6 +1,6 @@
 import assert from 'assert';
 import should from 'should';
-import spaz from '../lib';
+import spaz from '../lib/main/index.js';
 
 let $$ = spaz();
 
@@ -16,14 +16,14 @@ describe('.from()', () => {
 			.from().should.deepEqual(['a', 'b', 'c']);
 	});
 
-	it('clears graphs w/ empty array', () => {
-		let h_graphs = q.from([]).from(true);
+	it('clears graphs', () => {
+		let h_graphs = q.from.clear().from(true);
 		h_graphs.default.should.be.empty();
 		h_graphs.named.should.be.empty();
 	});
 
 	it('does not allow duplicate default/named graphs', () => {
-		q.from([])
+		q.from.clear()
 			.from('a', 'b', {
 				default: ['b', 'c'],
 				named: ['a', 'd', 'e']
@@ -35,7 +35,7 @@ describe('.from()', () => {
 	});
 
 	it('supports mono-string args in long form', () => {
-		q.from([])
+		q.from.clear()
 			.from('a', 'b', {
 				default: 'c',
 				named: 'a'
@@ -47,7 +47,7 @@ describe('.from()', () => {
 	});
 
 	it('overwrites both graphs w/ array', () => {
-		q.from(['x'])
+		q.from.clear().from(['x'])
 			.from(true).should.deepEqual({
 				default: ['x'],
 				named: [],

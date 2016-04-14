@@ -405,15 +405,16 @@ $$.ask('ns:Banana a ns:Fruit')
 
 > Only available on SELECT queries (ie: builders created with [`$$.select`]($$.select))
 
-### .rows(each: function)
-Executes the SELECT query, then calls `each(row: hash)` where `row` is an element taken from the `.bindings` array in the JSON results object.
+### .rows(callback: function)
+Executes the SELECT query, then calls `callback(rows: array[hash])` where `rows` is the list taken from the `.bindings` array in the JSON results object.
 
 eg:
 ```js
 $$.select('?alias')
 	.where('ns:Banana :alias ?alias')
-	.rows(function(h_row) {
-		do_something(h_row.alias);
+	.rows((a_rows) {
+		a_rows.length;
+		do_something(a_rows[0]);
 	});
 ```
 
