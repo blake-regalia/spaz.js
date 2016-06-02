@@ -3,15 +3,9 @@ import path from 'path';
 
 // gulp & gulp-specific plugins
 import gulp from 'gulp';
-import babel from 'gulp-babel';
-import mocha from 'gulp-mocha';
-import istanbul from 'gulp-istanbul';
-import plumber from 'gulp-plumber';
+import plugins from 'gulp-load-plugins';
 
-import eslint from 'gulp-eslint';
-import excludeGitignore from 'gulp-exclude-gitignore';
-import nsp from 'gulp-nsp';
-import coveralls from 'gulp-coveralls';
+const $ = plugins();
 
 // general libraries
 import del from 'del';
@@ -23,37 +17,37 @@ import compileConfig from './.compileconfig.json';
 // static
 gulp.task('static', () => {
 	return gulp.src('lib/query-builder.js')
-		.pipe(excludeGitignore())
-		.pipe(eslint())
-		.pipe(eslint.format())
-		.pipe(eslint.failAfterError());
+		.pipe($.excludeGitignore())
+		.pipe($.eslint())
+		.pipe($.eslint.format())
+		.pipe($.eslint.failAfterError());
 });
 
 // nsp
 gulp.task('nsp', (cb) => {
-	nsp('package.json', cb);
+	$.nsp('package.json', cb);
 });
 
 // pre-test
 gulp.task('pre-test', () => {
 	return gulp.src('lib/**/*.js')
-		.pipe(istanbul({
+		.pipe($.istanbul({
 			includeUntested: true,
 			instrumenter: Instrumenter
 		}))
-		.pipe(istanbul.hookRequire());
+		.pipe($.istanbul.hookRequire());
 });
 
 // mocha
 gulp.task('mocha', [], (cb) => {
 	let mochaErr;
 	gulp.src('test/**/*.js')
-		.pipe(plumber())
-		.pipe(mocha({reporter: 'spec'}))
+		.pipe($.plumber())
+		.pipe($.mocha({reporter: 'spec'}))
 		.on('error', (err) => {
 			mochaErr = err;
 		})
-		.pipe(istanbul.writeReports())
+		.pipe($.istanbul.writeReports())
 		.on('end', () => {
 			cb(mochaErr);
 		});
@@ -72,7 +66,7 @@ compileConfig.transpile.forEach((s_directory) => {
 	// register builder
 	gulp.task('build-'+s_directory, ['clean-'+s_directory], () => {
 		return gulp.src('./lib/'+s_directory+'/*.js')
-			.pipe(babel())
+			.pipe($.babel())
 			.pipe(gulp.dest('./dist/'+s_directory));
 	});
 });
@@ -94,7 +88,7 @@ gulp.task('coveralls', ['test'], () => {
 		return;
 	}
 	return gulp.src(path.join(__dirname, 'coverage/lcov.info'))
-		.pipe(coveralls());
+		.pipe($.coveralls());
 });
 
 // clean

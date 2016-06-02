@@ -144,12 +144,12 @@ describe('.group/having/order()', () => {
 	});
 
 	it('clears conditions list w/ empty array', () => {
-		q.group([])
+		q.group.clear()
 			.group().should.be.empty();
 	});
 
 	it('overwrites conditions list w/ array', () => {
-		q.group('a', 'b', 'c')
+		q.group('a', 'b', 'c').clear()
 			.group(['d', 'e']).group('f')
 			.group().should.deepEqual(['d', 'e', 'f']);
 	});
